@@ -1,0 +1,26 @@
+{
+  "name": "foreground-child",
+  "version": "0.0.0",
+  "description": "Run a child as if it's the foreground process.  Give it stdio.  Exit when it exits.",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tap": "^1.0.4"
+  },
+  "scripts": {
+    "test": "tap test/*.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/isaacs/foreground-child.git"
+  },
+  "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/isaacs/foreground-child/issues"
+  },
+  "homepage": "https://github.com/isaacs/foreground-child#readme"
+}
