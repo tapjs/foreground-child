@@ -20,13 +20,19 @@ module.exports = function (program, args) {
     } catch (er) {}
   })
 
-  process.on('exit', function (code) {
+  process.once('exit', function (code) {
+    emittedExit = true
     child.kill('SIGHUP')
   })
+
+  var emittedExit = false
 
   child.on('close', function (code, signal) {
     if (signal) {
       process.removeAllListeners(signal)
+      if (!emittedExit) {
+        process.emit('exit', code)
+      }
       process.kill(process.pid, signal)
     } else {
       process.exit(code)
