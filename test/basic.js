@@ -1,5 +1,6 @@
 var fg = require('../index.js')
 var spawn = require('child_process').spawn
+var signalExit = require('signal-exit')
 
 if (process.argv[2] === 'child') {
   console.log('stdout')
@@ -26,7 +27,7 @@ if (process.argv[2] === 'parent') {
   var child = fg(program, args)
 
   if (process.argv[3] === 'signalexit') {
-    process.on('exit', function () {
+    signalExit(function (code, signal) {
       console.log('parent exit')
     })
     switch (process.argv[4]) {

@@ -6,7 +6,9 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {},
+  "dependencies": {
+    "signal-exit": "^2.0.0"
+  },
   "devDependencies": {
     "tap": "^1.0.4"
   },

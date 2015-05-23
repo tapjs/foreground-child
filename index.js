@@ -1,3 +1,6 @@
+var signalExit = require('signal-exit')
+var spawn = require('child_process').spawn
+
 module.exports = function (program, args) {
   if (Array.isArray(program)) {
     args = program.slice(1)
@@ -6,79 +9,26 @@ module.exports = function (program, args) {
     args = [].slice.call(arguments, 1)
   }
 
-  var child = require('child_process').spawn(
-    program,
-    args,
-    { stdio: 'inherit' }
-  )
+  var child = spawn(program, args, { stdio: 'inherit' })
 
-  signals.forEach(function (sig) {
-    try {
-      process.on(sig, function () {
-        child.kill(sig)
-      })
-    } catch (er) {}
+  var childExited = false
+  signalExit(function (code, signal) {
+    child.kill(signal || 'SIGHUP')
   })
-
-  process.once('exit', function (code) {
-    emittedExit = true
-    child.kill('SIGHUP')
-  })
-
-  var emittedExit = false
 
   child.on('close', function (code, signal) {
+    childExited = true
     if (signal) {
-      process.removeAllListeners(signal)
-      if (!emittedExit) {
-        process.emit('exit', code)
-      }
+      // If there is nothing else keeping the event loop alive,
+      // then there's a race between a graceful exit and getting
+      // the signal to this process.  Put this timeout here to
+      // make sure we're still alive to get the signal, and thus
+      // exit with the intended signal code.
+      setTimeout(function () {}, 200)
       process.kill(process.pid, signal)
-    } else {
+    } else
       process.exit(code)
-    }
   })
 
   return child
 }
-
-var signals = [
-  'SIGABRT',
-  'SIGALRM',
-  'SIGBUS',
-  'SIGCHLD',
-  'SIGCLD',
-  'SIGCONT',
-  'SIGEMT',
-  'SIGFPE',
-  'SIGHUP',
-  'SIGILL',
-  'SIGINFO',
-  'SIGINT',
-  'SIGIO',
-  'SIGIOT',
-  'SIGKILL',
-  'SIGLOST',
-  'SIGPIPE',
-  'SIGPOLL',
-  'SIGPROF',
-  'SIGPWR',
-  'SIGQUIT',
-  'SIGSEGV',
-  'SIGSTKFLT',
-  'SIGSTOP',
-  'SIGSYS',
-  'SIGTERM',
-  'SIGTRAP',
-  'SIGTSTP',
-  'SIGTTIN',
-  'SIGTTOU',
-  'SIGUNUSED',
-  'SIGURG',
-  'SIGUSR1',
-  'SIGUSR2',
-  'SIGVTALRM',
-  'SIGWINCH',
-  'SIGXCPU',
-  'SIGXFSZ'
-]
