@@ -8,7 +8,7 @@ child processes for test coverage and such.
 
 ## USAGE
 
-```
+```JavaScript
 var foreground = require('foreground-child')
 
 // cats out this file
