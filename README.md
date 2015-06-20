@@ -1,5 +1,7 @@
 # foreground-child
 
+[![Build Status](https://travis-ci.org/isaacs/foreground-child.png)](https://travis-ci.org/isaacs/foreground-child)
+
 Run a child as if it's the foreground process.  Give it stdio.  Exit
 when it exits.
 
