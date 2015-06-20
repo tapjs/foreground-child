@@ -22,9 +22,20 @@ if (process.argv[2] === 'child') {
 }
 
 if (process.argv[2] === 'parent') {
+  var cb = undefined
+
+  // we can optionally assign a beforeExit handler
+  // to the foreground-child process; we should test it.
+  if (process.argv[4] === 'beforeExitHandler') {
+    cb = function (done) {
+      console.log('beforeExitHandler')
+      return done()
+    }
+  }
+
   var program = process.execPath
   var args = [__filename, 'child'].concat(process.argv.slice(3))
-  var child = fg(program, args)
+  var child = fg(program, args, cb)
 
   if (process.argv[3] === 'signalexit') {
     signalExit(function (code, signal) {
@@ -42,6 +53,7 @@ if (process.argv[2] === 'parent') {
       break
     }
   }
+
   return
 }
 
@@ -106,6 +118,26 @@ t.test('parent emits exit when SIGTERMed', function (t) {
           t.equal(signal, 'SIGTERM')
         t.equal(out, 'parent exit\n')
         t.end()
+      })
+    })
+  })
+  t.end()
+})
+
+t.test('beforeExitHandler', function (t) {
+  var codes = [0, 1, 2]
+  codes.forEach(function (c) {
+    t.test(c, function (t) {
+      t.plan(3)
+      var prog = process.execPath
+      var args = [__filename, 'parent', c, 'beforeExitHandler']
+      var child = spawn(prog, args)
+      var out = ''
+      child.stdout.on('data', function (c) { out += c })
+      child.on('close', function (code, signal) {
+        t.equal(signal, null)
+        t.equal(code, c)
+        t.equal(out, 'stdout\nbeforeExitHandler\n')
       })
     })
   })
