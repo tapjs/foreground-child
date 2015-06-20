@@ -100,7 +100,7 @@ t.test('parent emits exit when SIGTERMed', function (t) {
       var out = ''
       child.stdout.on('data', function (c) { out += c })
       child.on('close', function (code, signal) {
-        if (who === 'nobody')
+        if (who === 'nobody' || (process.env.TRAVIS && who === 'child'))
           t.equal(signal, null)
         else
           t.equal(signal, 'SIGTERM')
