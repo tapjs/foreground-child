@@ -100,7 +100,7 @@ t.test('parent emits exit when SIGTERMed', function (t) {
       var out = ''
       child.stdout.on('data', function (c) { out += c })
       child.on('close', function (code, signal) {
-        if (who === 'nobody' || (process.env.TRAVIS && who === 'child'))
+        if (who === 'nobody' || (isZero10OnTravis() && who === 'child'))
           t.equal(signal, null)
         else
           t.equal(signal, 'SIGTERM')
@@ -111,3 +111,7 @@ t.test('parent emits exit when SIGTERMed', function (t) {
   })
   t.end()
 })
+
+function isZero10OnTravis () {
+  return process.env.TRAVIS && /^v0\.10\.[0-9]+$/.test(process.version)
+}
