@@ -10,10 +10,10 @@
     "signal-exit": "^2.0.0"
   },
   "devDependencies": {
-    "tap": "^1.0.4"
+    "tap": "^1.2.1"
   },
   "scripts": {
-    "test": "tap test/*.js"
+    "test": "tap --coverage test/*.js"
   },
   "repository": {
     "type": "git",
