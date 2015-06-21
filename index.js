@@ -27,8 +27,6 @@ module.exports = function (program, args, cb) {
     args = [].slice.call(arguments, 1, arrayIndex)
   }
 
-  var c
-
   var child = spawn(program, args, { stdio: 'inherit' })
 
   var childExited = false
