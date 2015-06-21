@@ -103,6 +103,8 @@ t.test('exit codes', function (t) {
 })
 
 t.test('parent emits exit when SIGTERMed', function (t) {
+  if (isZero10OnTravis()) return t.done()
+
   var which = ['parent', 'child', 'nobody']
   which.forEach(function (who) {
     t.test('SIGTERM ' + who, function (t) {
@@ -112,7 +114,7 @@ t.test('parent emits exit when SIGTERMed', function (t) {
       var out = ''
       child.stdout.on('data', function (c) { out += c })
       child.on('close', function (code, signal) {
-        if (who === 'nobody' || (isZero10OnTravis() && who === 'child'))
+        if (who === 'nobody')
           t.equal(signal, null)
         else
           t.equal(signal, 'SIGTERM')

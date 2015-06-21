@@ -2,10 +2,18 @@ var signalExit = require('signal-exit')
 var spawn = require('child_process').spawn
 
 module.exports = function (program, args, cb) {
+  var arrayIndex = arguments.length
 
   if (typeof args === 'function') {
     cb = args
     args = undefined
+  } else {
+    cb = Array.prototype.slice.call(arguments).filter(function (arg, i) {
+      if (typeof arg === 'function') {
+        arrayIndex = i
+        return true
+      }
+    })[0]
   }
 
   cb = cb || function (done) {
@@ -16,8 +24,10 @@ module.exports = function (program, args, cb) {
     args = program.slice(1)
     program = program[0]
   } else if (!Array.isArray(args)) {
-    args = [].slice.call(arguments, 1)
+    args = [].slice.call(arguments, 1, arrayIndex)
   }
+
+  var c
 
   var child = spawn(program, args, { stdio: 'inherit' })
 
@@ -38,7 +48,7 @@ module.exports = function (program, args, cb) {
         setTimeout(function () {}, 200)
         process.kill(process.pid, signal)
       } else
-        process.exit(code)      
+        process.exit(code)
     })
   })
 
