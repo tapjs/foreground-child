@@ -1,5 +1,5 @@
 var fg = require('../index.js')
-var spawn = require('child_process').spawn
+var spawn = require('win-spawn')
 var signalExit = require('signal-exit')
 
 if (process.argv[2] === 'child') {

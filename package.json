@@ -7,7 +7,8 @@
     "test": "test"
   },
   "dependencies": {
-    "signal-exit": "^2.0.0"
+    "signal-exit": "^2.0.0",
+    "win-spawn": "^2.0.0"
   },
   "devDependencies": {
     "tap": "^1.2.1"
