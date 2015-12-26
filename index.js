@@ -1,5 +1,6 @@
 var signalExit = require('signal-exit')
 var spawn = require('win-spawn')
+var codeToSignal = require('code-to-signal')
 
 module.exports = function (program, args, cb) {
   var arrayIndex = arguments.length
@@ -31,12 +32,18 @@ module.exports = function (program, args, cb) {
 
   var childExited = false
   signalExit(function (code, signal) {
+    if (code > 128 && !signal)
+      signal = codeToSignal(code)
+
     child.kill(signal || 'SIGHUP')
   })
 
   child.on('close', function (code, signal) {
     cb(function () {
       childExited = true
+      if (code > 128 && !signal)
+        signal = codeToSignal(code)
+
       if (signal) {
         // If there is nothing else keeping the event loop alive,
         // then there's a race between a graceful exit and getting
