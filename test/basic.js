@@ -124,37 +124,6 @@ t.test('parent emits exit when SIGTERMed', { skip: isZero10OnTravis() }, functio
   t.end()
 })
 
-
-t.test('signals using sh', { skip: isWindows() }, function (t) {
-  var which = ['parent', 'child', 'nobody']
-  which.forEach(function (who) {
-    t.test('SIGTERM ' + who, function (t) {
-      var prog = '/bin/sh'
-      var cmd = [
-        process.execPath,
-        __filename,
-        'parent',
-        'signalexit',
-        who
-      ].join(' ')
-      var args = ['-c', cmd]
-      var child = spawn(prog, args)
-      var out = ''
-      child.stdout.on('data', function (c) { out += c })
-      child.on('close', function (code, signal) {
-        if (who === 'nobody')
-          t.equal(signal, null)
-        else
-          t.equal(signal, 'SIGTERM')
-        t.equal(out, 'parent exit\n')
-        t.end()
-      })
-    })
-  })
-  t.end()
-})
-
-
 t.test('beforeExitHandler', function (t) {
   var codes = [0, 1, 2]
   codes.forEach(function (c) {
@@ -178,8 +147,4 @@ t.test('beforeExitHandler', function (t) {
 function isZero10OnTravis () {
   return process.env.TRAVIS && /^v0\.10\.[0-9]+$/.test(process.version) ?
     'skip on 0.10 on Travis' : false
-}
-
-function isWindows () {
-  return process.platform === 'win32' && 'skip on windows'
 }

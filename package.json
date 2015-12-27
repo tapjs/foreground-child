@@ -7,7 +7,6 @@
     "test": "test"
   },
   "dependencies": {
-    "code-to-signal": "^1.0.2",
     "signal-exit": "^2.0.0",
     "win-spawn": "^2.0.0"
   },
