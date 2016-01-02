@@ -58,7 +58,8 @@ if (process.argv[2] === 'parent') {
 }
 
 var t = require('tap')
-t.test('signals', function (t) {
+
+t.test('signals', { skip: winSignals() }, function (t) {
   var signals = [
     'SIGTERM',
     'SIGHUP',
@@ -102,7 +103,7 @@ t.test('exit codes', function (t) {
   t.end()
 })
 
-t.test('parent emits exit when SIGTERMed', { skip: isZero10OnTravis() }, function (t) {
+t.test('parent emits exit when SIGTERMed', { skip: isZero10OnTravis() || winSignals() }, function (t) {
   var which = ['parent', 'child', 'nobody']
   which.forEach(function (who) {
     t.test('SIGTERM ' + who, function (t) {
@@ -147,4 +148,9 @@ t.test('beforeExitHandler', function (t) {
 function isZero10OnTravis () {
   return process.env.TRAVIS && /^v0\.10\.[0-9]+$/.test(process.version) ?
     'skip on 0.10 on Travis' : false
+}
+
+function winSignals () {
+  return process.platform === 'win32' ?
+    'windows does not support unix signals' : false
 }
