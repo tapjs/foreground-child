@@ -1,5 +1,8 @@
 var signalExit = require('signal-exit')
 var spawn = require('child_process').spawn
+if (process.platform === 'win32') {
+  spawn = require('cross-spawn-async')
+}
 
 module.exports = function (program, args, cb) {
   var arrayIndex = arguments.length

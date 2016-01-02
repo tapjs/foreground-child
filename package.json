@@ -7,6 +7,7 @@
     "test": "test"
   },
   "dependencies": {
+    "cross-spawn-async": "^2.1.1",
     "signal-exit": "^2.0.0"
   },
   "devDependencies": {
