@@ -1,7 +1,20 @@
 var signalExit = require('signal-exit')
 var spawn = require('child_process').spawn
-if (process.platform === 'win32') {
-  spawn = require('cross-spawn-async')
+var crossSpawn = require('cross-spawn-async')
+var fs = require('fs')
+
+function needsCrossSpawn (exe) {
+  if (process.platform !== 'win32') {
+    return false
+  }
+
+  var buffer = new Buffer(150)
+  try {
+    var fd = fs.openSync(exe, 'r')
+    fs.readSync(fd, buffer, 0, 150, 0)
+  } catch (e) {}
+
+  return /\#\!(.+)/i.test(buffer.toString().trim())
 }
 
 module.exports = function (program, args, cb) {
@@ -30,7 +43,8 @@ module.exports = function (program, args, cb) {
     args = [].slice.call(arguments, 1, arrayIndex)
   }
 
-  var child = spawn(program, args, { stdio: 'inherit' })
+  var spawnfn = needsCrossSpawn(program) ? crossSpawn : spawn
+  var child = spawnfn(program, args, { stdio: 'inherit' })
 
   var childExited = false
   signalExit(function (code, signal) {
