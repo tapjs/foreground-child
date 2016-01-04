@@ -18,12 +18,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/isaacs/foreground-child.git"
+    "url": "git+https://github.com/tapjs/foreground-child.git"
   },
   "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/isaacs/foreground-child/issues"
+    "url": "https://github.com/tapjs/foreground-child/issues"
   },
-  "homepage": "https://github.com/isaacs/foreground-child#readme"
+  "homepage": "https://github.com/tapjs/foreground-child#readme"
 }

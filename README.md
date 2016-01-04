@@ -1,6 +1,6 @@
 # foreground-child
 
-[![Build Status](https://travis-ci.org/isaacs/foreground-child.png)](https://travis-ci.org/isaacs/foreground-child) [![Build status](https://ci.appveyor.com/api/projects/status/kq9ylvx9fyr9khx0?svg=true)](https://ci.appveyor.com/project/isaacs/foreground-child)
+[![Build Status](https://travis-ci.org/tapjs/foreground-child.svg)](https://travis-ci.org/tapjs/foreground-child) [![Build status](https://ci.appveyor.com/api/projects/status/kq9ylvx9fyr9khx0?svg=true)](https://ci.appveyor.com/project/isaacs/foreground-child)
 
 Run a child as if it's the foreground process.  Give it stdio.  Exit
 when it exits.
