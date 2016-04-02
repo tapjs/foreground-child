@@ -28,6 +28,11 @@ if (process.argv[2] === 'parent') {
   // to the foreground-child process; we should test it.
   if (process.argv[4] === 'beforeExitHandler') {
     cb = function (done) {
+      var expectedExitCode = +process.argv[3]
+      if (expectedExitCode !== process.exitCode) {
+        console.log('unexpected exit code', expectedExitCode, process.exitCode);
+      }
+
       console.log('beforeExitHandler')
       return done()
     }

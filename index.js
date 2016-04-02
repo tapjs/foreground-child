@@ -69,6 +69,9 @@ module.exports = function (program, args, cb) {
   })
 
   child.on('close', function (code, signal) {
+    // Allow the callback to inspect the child’s exit code and/or modify it.
+    process.exitCode = signal ? 128 + signal : code
+
     cb(function () {
       childExited = true
       if (signal) {
@@ -79,8 +82,10 @@ module.exports = function (program, args, cb) {
         // exit with the intended signal code.
         setTimeout(function () {}, 200)
         process.kill(process.pid, signal)
-      } else
-        process.exit(code)
+      } else {
+        // Equivalent to process.exit() on Node.js >= 0.11.8
+        process.exit(process.exitCode)
+      }
     })
   })
 
