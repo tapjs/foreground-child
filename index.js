@@ -1,6 +1,6 @@
 var signalExit = require('signal-exit')
 var spawn = require('child_process').spawn
-var crossSpawn = require('cross-spawn-async')
+var crossSpawn = require('cross-spawn')
 var fs = require('fs')
 var which = require('which')
 
