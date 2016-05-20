@@ -7,7 +7,7 @@
     "test": "test"
   },
   "dependencies": {
-    "cross-spawn-async": "^2.1.1",
+    "cross-spawn": "^3.0.1",
     "signal-exit": "^2.0.0",
     "which": "^1.2.1"
   },
