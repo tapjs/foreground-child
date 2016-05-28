@@ -7,9 +7,8 @@
     "test": "test"
   },
   "dependencies": {
-    "cross-spawn-async": "^2.1.1",
-    "signal-exit": "^2.0.0",
-    "which": "^1.2.1"
+    "cross-spawn": "^4",
+    "signal-exit": "^2.0.0"
   },
   "devDependencies": {
     "tap": "^5.1.1"

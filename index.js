@@ -1,37 +1,7 @@
 var signalExit = require('signal-exit')
 var spawn = require('child_process').spawn
-var crossSpawn = require('cross-spawn-async')
-var fs = require('fs')
-var which = require('which')
-
-function needsCrossSpawn (exe) {
-  if (process.platform !== 'win32') {
-    return false
-  }
-
-  try {
-    exe = which.sync(exe)
-  } catch (er) {
-    // failure to find the file?  cmd probably needed.
-    return true
-  }
-
-  if (/\.(com|cmd|bat)$/i.test(exe)) {
-    // need cmd.exe to run command and batch files
-    return true
-  }
-
-  var buffer = new Buffer(150)
-  try {
-    var fd = fs.openSync(exe, 'r')
-    fs.readSync(fd, buffer, 0, 150, 0)
-  } catch (e) {
-    // If it's not an actual file, probably it needs cmd.exe.
-    // also, would be unsafe to test arbitrary memory on next line!
-    return true
-  }
-
-  return /\#\!(.+)/i.test(buffer.toString().trim())
+if (process.platform === 'win32') {
+  spawn = require('cross-spawn')
 }
 
 module.exports = function (program, args, cb) {
@@ -66,8 +36,7 @@ module.exports = function (program, args, cb) {
     spawnOpts.stdio.push('ipc')
   }
 
-  var spawnfn = needsCrossSpawn(program) ? crossSpawn : spawn
-  var child = spawnfn(program, args, spawnOpts)
+  var child = spawn(program, args, spawnOpts)
 
   var childExited = false
   signalExit(function (code, signal) {
