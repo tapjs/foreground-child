@@ -3,6 +3,7 @@ var spawn = require('child_process').spawn
 var signalExit = require('signal-exit')
 
 if (process.argv[2] === 'child') {
+  setTimeout(function(){}, 1000);
   console.log('stdout')
   setTimeout(function () {}, 1000)
   switch (process.argv[3]) {
