@@ -60,8 +60,14 @@ module.exports = function (program, args, cb) {
     args = [].slice.call(arguments, 1, arrayIndex)
   }
 
+  var spawnOpts = { stdio: ['inherit', 'inherit', 'inherit'] }
+
+  if (process.send) {
+    spawnOpts.stdio.push('ipc')
+  }
+
   var spawnfn = needsCrossSpawn(program) ? crossSpawn : spawn
-  var child = spawnfn(program, args, { stdio: 'inherit' })
+  var child = spawnfn(program, args, spawnOpts)
 
   var childExited = false
   signalExit(function (code, signal) {
@@ -88,6 +94,18 @@ module.exports = function (program, args, cb) {
       }
     })
   })
+
+  if (process.send) {
+    process.removeAllListeners('message')
+
+    child.on('message', function (message, sendHandle) {
+      process.send(message, sendHandle)
+    })
+
+    process.on('message', function (message, sendHandle) {
+      child.send(message, sendHandle)
+    })
+  }
 
   return child
 }

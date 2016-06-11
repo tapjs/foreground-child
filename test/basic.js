@@ -16,6 +16,14 @@ if (process.argv[2] === 'child') {
   case '2':
     process.exit(+process.argv[3])
     break
+
+  case 'ipc':
+    process.on('message', function(m) {
+      console.log('message received')
+      process.send(m)
+      process.exit(0)
+    })
+    break
   }
 
   return
@@ -148,6 +156,26 @@ t.test('beforeExitHandler', function (t) {
     })
   })
   t.end()
+})
+
+t.test('IPC forwarding', function (t) {
+  t.plan(5)
+  var prog = process.execPath
+  var args = [__filename, 'parent', 'ipc']
+  child = spawn(prog, args, { stdio: ['ipc', 'pipe', 'pipe'] })
+  var out = ''
+  var messages = []
+  child.on('message', function (m) { messages.push(m) })
+  child.stdout.on('data', function (c) { out += c })
+
+  child.send({ data: 'foobar' })
+  child.on('close', function (code, signal) {
+    t.equal(signal, null)
+    t.equal(code, 0)
+    t.equal(out, 'stdout\nmessage received\n')
+    t.equal(messages.length, 1)
+    t.equal(messages[0].data, 'foobar')
+  })
 })
 
 function isZero10OnTravis () {
