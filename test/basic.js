@@ -9,6 +9,7 @@ if (process.argv[2] === 'child') {
   case 'SIGHUP':
   case 'SIGKILL':
     process.kill(process.pid, process.argv[3])
+    setTimeout(function () {}, 100)
     break
 
   case '0':
