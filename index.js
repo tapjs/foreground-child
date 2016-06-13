@@ -60,7 +60,7 @@ module.exports = function (program, args, cb) {
     args = [].slice.call(arguments, 1, arrayIndex)
   }
 
-  var spawnOpts = { stdio: ['inherit', 'inherit', 'inherit'] }
+  var spawnOpts = { stdio: [0, 1, 2] }
 
   if (process.send) {
     spawnOpts.stdio.push('ipc')
