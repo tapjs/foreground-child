@@ -31,3 +31,16 @@ var child = foreground('cat', [__filename], function (done) {
   return done()
 })
 ```
+
+## Caveats
+
+The "normal" standard IO file descriptors (0, 1, and 2 for stdin,
+stdout, and stderr respectively) are shared with the child process.
+Additionally, if there is an IPC channel set up in the parent, then
+messages are proxied to the child on file descriptor 3.
+
+However, in Node, it's possible to also map arbitrary file descriptors
+into a child process.  In these cases, foreground-child will not map
+the file descriptors into the child.  If file descriptors 0, 1, or 2
+are used for the IPC channel, then strange behavior may happen (like
+printing IPC messages to stderr, for example).
