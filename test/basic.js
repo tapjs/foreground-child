@@ -4,6 +4,7 @@ var signalExit = require('signal-exit')
 
 if (process.argv[2] === 'child') {
   console.log('stdout')
+  setTimeout(function () {}, 1000)
   switch (process.argv[3]) {
   case 'SIGTERM':
   case 'SIGHUP':
