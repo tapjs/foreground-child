@@ -1,5 +1,9 @@
 # Changes
 
+
+## v1.5.2
+
+* add an automatic changelog script
 * replace cross-spawn-async with cross-spawn
 * test: stay alive long enough to be signaled
 
