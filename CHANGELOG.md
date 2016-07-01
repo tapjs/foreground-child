@@ -1,6 +1,10 @@
 # Changes
 
 
+## v1.5.3
+
+* bump deps
+
 ## v1.5.2
 
 * add an automatic changelog script
