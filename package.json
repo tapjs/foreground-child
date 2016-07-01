@@ -8,10 +8,10 @@
   },
   "dependencies": {
     "cross-spawn": "^4",
-    "signal-exit": "^2.0.0"
+    "signal-exit": "^3.0.0"
   },
   "devDependencies": {
-    "tap": "^5.1.1"
+    "tap": "^6.1.1"
   },
   "scripts": {
     "test": "tap --coverage test/*.js",
