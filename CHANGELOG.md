@@ -1,6 +1,11 @@
 # Changes
 
 
+## v1.5.4
+
+* update tap to v8
+* Let the child decide if signals should be fatal
+
 ## v1.5.3
 
 * bump deps
