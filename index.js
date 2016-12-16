@@ -41,6 +41,9 @@ module.exports = function (program, args, cb) {
   var childExited = false
   var unproxySignals = proxySignals(child)
   process.on('exit', childHangup)
+  function childHangup () {
+    child.kill('SIGHUP')
+  }
 
   child.on('close', function (code, signal) {
     // Allow the callback to inspect the child’s exit code and/or modify it.
