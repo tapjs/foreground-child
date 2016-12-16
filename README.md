@@ -44,3 +44,9 @@ into a child process.  In these cases, foreground-child will not map
 the file descriptors into the child.  If file descriptors 0, 1, or 2
 are used for the IPC channel, then strange behavior may happen (like
 printing IPC messages to stderr, for example).
+
+Note that a SIGKILL will always kill the parent process, _and never
+the child process_, because SIGKILL cannot be caught or proxied.  The
+only way to do this would be if Node provided a way to truly exec a
+process as the new foreground program in the same process space,
+without forking a separate child process.

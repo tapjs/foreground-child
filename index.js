@@ -39,15 +39,16 @@ module.exports = function (program, args, cb) {
   var child = spawn(program, args, spawnOpts)
 
   var childExited = false
-  signalExit(function (code, signal) {
-    child.kill(signal || 'SIGHUP')
-  })
+  var unproxySignals = proxySignals(child)
+  process.on('exit', childHangup)
 
   child.on('close', function (code, signal) {
     // Allow the callback to inspect the child’s exit code and/or modify it.
     process.exitCode = signal ? 128 + signal : code
 
     cb(function () {
+      unproxySignals()
+      process.removeListener('exit', childHangup)
       childExited = true
       if (signal) {
         // If there is nothing else keeping the event loop alive,
@@ -77,4 +78,22 @@ module.exports = function (program, args, cb) {
   }
 
   return child
+}
+
+function proxySignals (child) {
+  var listeners = {}
+  signalExit.signals().forEach(function (sig) {
+    listeners[sig] = function () {
+      child.kill(sig)
+    }
+    process.on(sig, listeners[sig])
+  })
+
+  return unproxySignals
+
+  function unproxySignals () {
+    for (var sig in listeners) {
+      process.removeListener(sig, listeners[sig])
+    }
+  }
 }
