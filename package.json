@@ -27,5 +27,8 @@
   "bugs": {
     "url": "https://github.com/tapjs/foreground-child/issues"
   },
-  "homepage": "https://github.com/tapjs/foreground-child#readme"
+  "homepage": "https://github.com/tapjs/foreground-child#readme",
+  "files": [
+    "index.js"
+  ]
 }
