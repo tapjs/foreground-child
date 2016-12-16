@@ -1,6 +1,10 @@
 # Changes
 
 
+## v1.5.6
+
+* Fix 'childHangup is undefined'
+
 ## v1.5.5
 
 * add files list to package.json
