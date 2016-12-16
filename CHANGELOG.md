@@ -1,6 +1,11 @@
 # Changes
 
 
+## v1.5.5
+
+* add files list to package.json
+* neveragain.tech pledge request
+
 ## v1.5.4
 
 * update tap to v8
