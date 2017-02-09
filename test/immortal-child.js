@@ -9,6 +9,10 @@ else
 
 function test () {
   var t = require('tap')
+  if (process.platform === 'win32') {
+    t.plan(0, 'skip on windows')
+    return
+  }
   var spawn = require('child_process').spawn
   var proc = spawn(node, [__filename, 'parent'])
 
