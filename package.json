@@ -7,11 +7,11 @@
     "test": "test"
   },
   "dependencies": {
-    "cross-spawn": "^4",
+    "cross-spawn": "^6",
     "signal-exit": "^3.0.0"
   },
   "devDependencies": {
-    "tap": "^8.0.1"
+    "tap": "^12.0.1"
   },
   "scripts": {
     "test": "tap --coverage test/*.js",
