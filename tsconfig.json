@@ -17,8 +17,8 @@
     "strictNullChecks": false,
     "target": "es2017",
     "typeRoots": [
-      "node_modules/@types",
-      "src/custom-typings"
+      "./node_modules/@types",
+      "./custom-typings"
     ]
   },
   "files": [
