@@ -1,5 +1,8 @@
 # Changes
 
+## Unreleased
+
+* BREAKING CHANGE: Require Node 6
 
 ## v1.5.6
 
