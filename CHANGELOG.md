@@ -1,5 +1,8 @@
 # Changes
 
+## Unreleased
+
+* Internal: Add lock file
 
 ## v1.5.6
 
