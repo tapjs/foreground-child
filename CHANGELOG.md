@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Breaking change: Require Node 6
 * Internal: Add Typescript support
 * Internal: Add lock file
 

@@ -3,8 +3,8 @@
   "version": "1.5.6",
   "description": "Run a child as if it's the foreground process.  Give it stdio.  Exit when it exits.",
   "main": "index.js",
-  "directories": {
-    "test": "test"
+  "engines": {
+    "node": ">=6.0.0"
   },
   "dependencies": {
     "cross-spawn": "^6",
@@ -32,6 +32,9 @@
     "url": "https://github.com/tapjs/foreground-child/issues"
   },
   "homepage": "https://github.com/tapjs/foreground-child#readme",
+  "directories": {
+    "test": "test"
+  },
   "files": [
     "index.d.ts",
     "index.js",
