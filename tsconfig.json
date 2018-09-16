@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "declaration": true,
+    "esModuleInterop": true,
+    "inlineSourceMap": true,
+    "lib": [
+      "es2017"
+    ],
+    "locale": "en-us",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "newLine": "lf",
+    "outDir": ".",
+    "rootDir": ".",
+    "strict": false,
+    "strictNullChecks": false,
+    "target": "es2017",
+    "typeRoots": [
+      "node_modules/@types",
+      "src/custom-typings"
+    ]
+  },
+  "files": [
+    "./index.ts"
+  ]
+}

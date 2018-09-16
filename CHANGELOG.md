@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Internal: Add Typescript support
 * Internal: Add lock file
 
 ## v1.5.6

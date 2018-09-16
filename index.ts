@@ -33,7 +33,7 @@ module.exports = function (program, args, cb) {
   var spawnOpts = { stdio: [0, 1, 2] }
 
   if (process.send) {
-    spawnOpts.stdio.push('ipc')
+    (spawnOpts as any).stdio.push('ipc')
   }
 
   var child = spawn(program, args, spawnOpts)
