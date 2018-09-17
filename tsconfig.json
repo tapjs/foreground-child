@@ -5,7 +5,7 @@
     "esModuleInterop": true,
     "inlineSourceMap": true,
     "lib": [
-      "es2017"
+      "es2015"
     ],
     "locale": "en-us",
     "module": "commonjs",
@@ -14,7 +14,7 @@
     "outDir": ".",
     "rootDir": ".",
     "strict": true,
-    "target": "es2017",
+    "target": "es2015",
     "typeRoots": [
       "./node_modules/@types",
       "./custom-typings"
