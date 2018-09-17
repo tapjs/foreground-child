@@ -1,31 +1,59 @@
 import signalExit from 'signal-exit';
+import { ChildProcess } from "child_process";
 const spawn = process.platform === 'win32' ? require('cross-spawn') : require('child_process').spawn;
 
-function foregroundChild (program, args, cb) {
-  var arrayIndex = arguments.length
+type CloseHandler = (done: () => void) => any;
 
-  if (typeof args === 'function') {
-    cb = args
-    args = undefined
+/**
+ * @internal
+ */
+interface NormalizedArguments {
+  readonly program: string;
+  readonly args: ReadonlyArray<string>;
+  readonly cb: CloseHandler;
+}
+
+/**
+ * Normalizes the arguments passed to `foregroundChild`.
+ *
+ * See the signature of `foregroundChild` for the supported arguments.
+ *
+ * @param a Array of arguments passed to `foregroundChild`.
+ * @return Normalized arguments
+ * @internal
+ */
+function normalizeArguments(a: any[]): NormalizedArguments {
+  let program: string;
+  let args: ReadonlyArray<string>;
+  let cb: CloseHandler;
+
+  let processArgsEnd: number = a.length;
+  const lastArg: any = a[a.length - 1];
+  if (typeof lastArg === "function") {
+    cb = lastArg;
+    processArgsEnd--;
   } else {
-    cb = Array.prototype.slice.call(arguments).filter(function (arg, i) {
-      if (typeof arg === 'function') {
-        arrayIndex = i
-        return true
-      }
-    })[0]
+    cb = (done: () => void) => done();
   }
 
-  cb = cb || function (done) {
-    return done()
+  if (Array.isArray(a[0])) {
+    [program, ...args] = a[0];
+  } else {
+    program = a[0];
+    args = Array.isArray(a[1]) ? a[1] : a.slice(1, processArgsEnd);
   }
 
-  if (Array.isArray(program)) {
-    args = program.slice(1)
-    program = program[0]
-  } else if (!Array.isArray(args)) {
-    args = [].slice.call(arguments, 1, arrayIndex)
-  }
+  return {program, args, cb};
+}
+
+function foregroundChild(program: string | ReadonlyArray<string>, cb?: CloseHandler);
+function foregroundChild(program: string, args: ReadonlyArray<string>, cb?: CloseHandler);
+function foregroundChild(program: string, arg1: string, cb?: CloseHandler);
+function foregroundChild(program: string, arg1: string, arg2: string, cb?: CloseHandler);
+function foregroundChild(program: string, arg1: string, arg2: string, arg3: string, cb?: CloseHandler);
+function foregroundChild(program: string, arg1: string, arg2: string, arg3: string, arg4: string, cb?: CloseHandler);
+function foregroundChild (...a: any[]): ChildProcess {
+  const {program, args, cb} = normalizeArguments(a);
 
   var spawnOpts = { stdio: [0, 1, 2] }
 
@@ -100,6 +128,7 @@ function proxySignals (child) {
 
 // These TS exports are only there to generate the type definitions, they will be overwritten by the CJS exports below
 export {
+  CloseHandler,
   foregroundChild,
 };
 
