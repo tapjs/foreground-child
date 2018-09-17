@@ -13,8 +13,7 @@
     "newLine": "lf",
     "outDir": ".",
     "rootDir": ".",
-    "strict": false,
-    "strictNullChecks": false,
+    "strict": true,
     "target": "es2017",
     "typeRoots": [
       "./node_modules/@types",

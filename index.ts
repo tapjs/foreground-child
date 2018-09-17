@@ -1,5 +1,5 @@
 import signalExit from 'signal-exit';
-import { ChildProcess } from "child_process";
+import { ChildProcess, SpawnOptions } from "child_process";
 const spawn = process.platform === 'win32' ? require('cross-spawn') : require('child_process').spawn;
 
 type CloseHandler = (done: () => void) => any;
@@ -46,66 +46,64 @@ function normalizeArguments(a: any[]): NormalizedArguments {
   return {program, args, cb};
 }
 
-function foregroundChild(program: string | ReadonlyArray<string>, cb?: CloseHandler);
-function foregroundChild(program: string, args: ReadonlyArray<string>, cb?: CloseHandler);
-function foregroundChild(program: string, arg1: string, cb?: CloseHandler);
-function foregroundChild(program: string, arg1: string, arg2: string, cb?: CloseHandler);
-function foregroundChild(program: string, arg1: string, arg2: string, arg3: string, cb?: CloseHandler);
-function foregroundChild(program: string, arg1: string, arg2: string, arg3: string, arg4: string, cb?: CloseHandler);
-function foregroundChild (...a: any[]): ChildProcess {
+function foregroundChild(program: string | ReadonlyArray<string>, cb?: CloseHandler): ChildProcess;
+function foregroundChild(program: string, args: ReadonlyArray<string>, cb?: CloseHandler): ChildProcess;
+function foregroundChild(program: string, arg1: string, cb?: CloseHandler): ChildProcess;
+function foregroundChild(program: string, arg1: string, arg2: string, cb?: CloseHandler): ChildProcess;
+function foregroundChild(program: string, arg1: string, arg2: string, arg3: string, cb?: CloseHandler): ChildProcess;
+function foregroundChild(program: string, arg1: string, arg2: string, arg3: string, arg4: string, cb?: CloseHandler): ChildProcess;
+function foregroundChild (...a: any[]): any {
   const {program, args, cb} = normalizeArguments(a);
 
-  var spawnOpts = { stdio: [0, 1, 2] }
-
-  if (process.send) {
-    (spawnOpts as any).stdio.push('ipc')
+  const spawnOpts: SpawnOptions = {
+    stdio: process.send !== undefined ? [0, 1, 2, "ipc"] : [0, 1, 2],
   }
 
-  var child = spawn(program, args, spawnOpts)
+  const child: ChildProcess = spawn(program, args, spawnOpts);
 
-  var childExited = false
-  var unproxySignals = proxySignals(child)
-  process.on('exit', childHangup)
+  let childExited = false;
+  const unproxySignals: UnproxySignals = proxySignals(child);
+  process.on('exit', childHangup);
   function childHangup () {
-    child.kill('SIGHUP')
+    child.kill('SIGHUP');
   }
 
-  child.on('close', function (code, signal) {
+  child.on('close', function (code: number, signal: string) {
     // Allow the callback to inspect the child’s exit code and/or modify it.
-    process.exitCode = signal ? 128 + signal : code
+    process.exitCode = signal ? 128 + signal : code as any;
 
-    cb(function () {
-      unproxySignals()
-      process.removeListener('exit', childHangup)
-      childExited = true
+    cb(() => {
+      unproxySignals();
+      process.removeListener('exit', childHangup);
+      childExited = true;
       if (signal) {
         // If there is nothing else keeping the event loop alive,
         // then there's a race between a graceful exit and getting
         // the signal to this process.  Put this timeout here to
         // make sure we're still alive to get the signal, and thus
         // exit with the intended signal code.
-        setTimeout(function () {}, 200)
-        process.kill(process.pid, signal)
+        setTimeout(() => {}, 200);
+        process.kill(process.pid, signal);
       } else {
         // Equivalent to process.exit() on Node.js >= 0.11.8
-        process.exit(process.exitCode)
+        process.exit(process.exitCode);
       }
     })
-  })
+  });
 
-  if (process.send) {
-    process.removeAllListeners('message')
+  if (process.send !== undefined) {
+    process.removeAllListeners('message');
 
-    child.on('message', function (message, sendHandle) {
-      process.send(message, sendHandle)
-    })
+    child.on('message', (message, sendHandle) => {
+      process.send!(message, sendHandle);
+    });
 
-    process.on('message', function (message, sendHandle) {
-      child.send(message, sendHandle)
-    })
+    process.on('message', (message, sendHandle) => {
+      child.send(message, sendHandle);
+    });
   }
 
-  return child
+  return child;
 }
 
 /**
