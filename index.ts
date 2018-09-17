@@ -108,20 +108,25 @@ function foregroundChild (...a: any[]): ChildProcess {
   return child
 }
 
-function proxySignals (child) {
-  var listeners = {}
-  signalExit.signals().forEach(function (sig) {
-    listeners[sig] = function () {
-      child.kill(sig)
-    }
-    process.on(sig, listeners[sig])
-  })
+/**
+ * @internal
+ */
+type UnproxySignals = () => void;
 
-  return unproxySignals
+function proxySignals (child: ChildProcess): UnproxySignals {
+  const listeners: Record<NodeJS.Signals, NodeJS.SignalsListener> = Object.create(null);
+
+  for (const sig of signalExit.signals()) {
+    const listener: NodeJS.SignalsListener = () => child.kill(sig);
+    listeners[sig] = listener;
+    process.on(sig, listener);
+  }
+
+  return unproxySignals;
 
   function unproxySignals () {
-    for (var sig in listeners) {
-      process.removeListener(sig, listeners[sig])
+    for (const sig in listeners) {
+      process.removeListener(sig, listeners[sig as NodeJS.Signals]);
     }
   }
 }
