@@ -26,6 +26,8 @@ interface ProcessLike {
 
   exit(code?: number): any;
 
+  kill(pid: number, signal?: string | number): any;
+
   on(signal: NodeJS.Signals, listener: NodeJS.SignalsListener): any;
 
   on(signal: "message", listener: (message: any, sendHandle: Socket | Server) => void): any;
@@ -64,7 +66,7 @@ type CloseFn = () => void;
 async function proxy(parent: ProcessLike, child: ChildProcess): Promise<CloseFn> {
   return new Promise<CloseFn>((resolve, reject) => {
     const unproxySignals: UnproxySignals = proxySignals(parent, child);
-    const unproxyStreams: UnproxyStreams = proxyMessages(parent, child);
+    const unproxyStreams: UnproxyStreams = proxyStreams(parent, child);
     const unproxyMessages: UnproxyMessages = proxyMessages(parent, child);
 
     parent.on("exit", onParentExit);
@@ -89,7 +91,7 @@ async function proxy(parent: ProcessLike, child: ChildProcess): Promise<CloseFn>
             // exit with the intended signal code.
             setTimeout(noop, 200);
           }
-          process.kill(parent.pid, signal);
+          parent.kill(parent.pid, signal);
         } else {
           parent.exit(code!);
         }
@@ -267,26 +269,26 @@ type UnproxyStreams = () => void;
  */
 function proxyStreams(parent: ProcessLike, child: ChildProcess): UnproxyStreams {
   if (typeof child.stdout === "object" && child.stdout !== null) {
-    child.stdout.pipe(process.stdout);
+    child.stdout.pipe(parent.stdout);
   }
   if (typeof child.stderr === "object" && child.stderr !== null) {
-    child.stderr.pipe(process.stderr);
+    child.stderr.pipe(parent.stderr);
   }
   if (typeof child.stdin === "object" && child.stdin !== null) {
-    process.stdin.pipe(child.stdin);
+    parent.stdin.pipe(child.stdin);
   }
 
   return unproxyStreams;
 
   function unproxyStreams(): void {
     if (typeof child.stdout === "object" && child.stdout !== null) {
-      child.stdout.unpipe(process.stdout);
+      child.stdout.unpipe(parent.stdout);
     }
     if (typeof child.stderr === "object" && child.stderr !== null) {
-      child.stderr.unpipe(process.stderr);
+      child.stderr.unpipe(parent.stderr);
     }
     if (typeof child.stdin === "object" && child.stdin !== null) {
-      process.stdin.unpipe(child.stdin);
+      parent.stdin.unpipe(child.stdin);
     }
   }
 }
