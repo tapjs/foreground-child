@@ -1,8 +1,8 @@
-import childProcess from "child_process";
+import cp from "child_process";
+import path from "path";
 import signalExit from "signal-exit";
 import t from "tap";
-import { CloseFn, CloseHandler, compat as fg } from "../index";
-const spawn = childProcess.spawn;
+import * as fg from "../index";
 
 function noop() {
 }
@@ -36,7 +36,9 @@ function childMain() {
       process.exit(+process.argv[3]);
       break;
 
-    case "ipc":
+    case "ipc1":
+    case "ipc2":
+    case "ipc3":
       process.on("message", (m) => {
         console.log("message received");
         process.send!(m);
@@ -47,25 +49,51 @@ function childMain() {
 }
 
 function parentMain() {
-  let cb: CloseHandler | undefined;
+  let options: fg.SpawnOptions | undefined;
+  switch (process.argv[3]) {
+    case "hello": {
+      const fileName = process.platform === "win32" ? "hello.cmd" : "hello.sh";
+      const file = path.join(__dirname, "executable", fileName);
+      fg.spawn(file).close.then((close) => close());
+      break;
+    }
+    case "hello2": {
+      const fileName = process.platform === "win32" ? "hello.cmd" : "hello.sh";
+      const file = path.join(__dirname, "executable", fileName);
+      fg.spawn(file, [], {spawn: cp.spawn, parent: process})
+        .close.then((close) => close());
+      break;
+    }
+    case "ipc2":
+      options = {stdio: ["inherit", "inherit", "inherit"]};
+      break;
+    case "ipc3":
+      options = {stdio: ["inherit", "inherit", "inherit", "ipc"]};
+      break;
+  }
+
+  let cb: fg.CloseHandler | undefined;
 
   // we can optionally assign a beforeExit handler
   // to the foreground-child process; we should test it.
   if (process.argv[4] === "beforeExitHandler") {
-    cb = (done: CloseFn) => {
+    cb = (done: fg.CloseFn) => {
       const expectedExitCode = parseInt(process.argv[3], 10);
-      if (expectedExitCode !== process.exitCode) {
-        console.log("unexpected exit code", expectedExitCode, process.exitCode);
+      if (expectedExitCode !== done.code) {
+        console.log("unexpected exit code", expectedExitCode, done.code);
       }
 
       console.log("beforeExitHandler");
       return done();
     };
+  } else {
+    cb = (done: fg.CloseFn) => done();
   }
 
   const program = process.execPath;
   const args = [__filename, "child"].concat(process.argv.slice(3));
-  const child = fg(program, args, cb);
+  const {child, close} = fg.spawn(program, args, options);
+  close.then(cb);
 
   if (process.argv[3] === "signalexit") {
     signalExit((code, signal) => {
@@ -86,7 +114,7 @@ function parentMain() {
 }
 
 function test() {
-  t.test("signals", { skip: winSignals() }, (t: any): void => {
+  t.test("signals", {skip: winSignals()}, (t: any): void => {
     const signals = [
       "SIGTERM",
       "SIGHUP",
@@ -97,7 +125,7 @@ function test() {
         t.plan(3);
         const prog = process.execPath;
         const args = [__filename, "parent", sig];
-        const child = spawn(prog, args);
+        const child = cp.spawn(prog, args);
         let out = "";
         child.stdout.on("data", (c) => out += c);
         child.on("close", (code, signal) => {
@@ -117,7 +145,7 @@ function test() {
         t.plan(3);
         const prog = process.execPath;
         const args = [__filename, "parent", c.toString()];
-        const child = spawn(prog, args);
+        const child = cp.spawn(prog, args);
         let out = "";
         child.stdout.on("data", (c) => out += c);
         child.on("close", (code, signal) => {
@@ -130,13 +158,13 @@ function test() {
     t.end();
   });
 
-  t.test("parent emits exit when SIGTERMed", { skip: winSignals() }, (t: any): void => {
+  t.test("parent emits exit when SIGTERMed", {skip: winSignals()}, (t: any): void => {
     const which = ["parent", "child", "nobody"];
     for (const who of which) {
       t.test("SIGTERM " + who, (t: any): void => {
         const prog = process.execPath;
         const args = [__filename, "parent", "signalexit", who];
-        const child = spawn(prog, args);
+        const child = cp.spawn(prog, args);
         let out = "";
         child.stdout.on("data", (c) => out += c);
         child.on("close", (code, signal) => {
@@ -160,7 +188,7 @@ function test() {
         t.plan(3);
         const prog = process.execPath;
         const args = [__filename, "parent", c.toString(10), "beforeExitHandler"];
-        const child = spawn(prog, args);
+        const child = cp.spawn(prog, args);
         let out = "";
         child.stdout.on("data", (c) => out += c);
         child.on("close", (code, signal) => {
@@ -174,24 +202,63 @@ function test() {
   });
 
   t.test("IPC forwarding", (t: any): void => {
-    t.plan(5);
-    const prog = process.execPath;
-    const args = [__filename, "parent", "ipc"];
-    const child = spawn(prog, args, { stdio: ["ipc", "pipe", "pipe"] });
-    let out = "";
-    const messages: any[] = [];
-    child.on("message", (m) => messages.push(m));
-    child.stdout.on("data", (c) => out += c);
+    for (const ipcKind of ["ipc1", "ipc2", "ipc3"]) {
+      t.test(ipcKind, (t: any) => {
+        t.plan(5);
+        const prog = process.execPath;
+        const args = [__filename, "parent", ipcKind];
+        const child = cp.spawn(prog, args, {stdio: ["ipc", "pipe", "pipe"]});
+        let out = "";
+        const messages: any[] = [];
+        child.on("message", (m) => messages.push(m));
+        child.stdout.on("data", (c) => out += c);
 
-    child.send({ data: "foobar" });
+        child.send({data: "foobar"});
+        child.on("close", (code, signal) => {
+          t.equal(signal, null);
+          t.equal(code, 0);
+          t.equal(out, "stdout\nmessage received\n");
+          t.equal(messages.length, 1);
+          t.equal(messages[0].data, "foobar");
+        });
+      });
+    }
+    t.end();
+  });
+
+  t.test("spawn(`hello`)", (t: any): void => {
+    t.plan(3);
+    const prog = process.execPath;
+    const args = [__filename, "parent", "hello"];
+    const child = cp.spawn(prog, args);
+    const chunks: Buffer[] = [];
+    child.stdout.on("data", (c) => chunks.push(c));
+
     child.on("close", (code, signal) => {
-      t.equal(signal, null);
+      const out: string = Buffer.concat(chunks).toString("UTF-8");
       t.equal(code, 0);
-      t.equal(out, "stdout\nmessage received\n");
-      t.equal(messages.length, 1);
-      t.equal(messages[0].data, "foobar");
+      t.equal(signal, null);
+      t.equal(out, "Hello, World!\n");
     });
   });
+
+  t.test("spawn(`hello`, [], {spawn: cp.spawn, parent: process})", (t: any): void => {
+    t.plan(3);
+    const prog = process.execPath;
+    const args = [__filename, "parent", "hello2"];
+    const child = cp.spawn(prog, args);
+    const chunks: Buffer[] = [];
+    child.stdout.on("data", (c) => chunks.push(c));
+
+    child.on("close", (code, signal) => {
+      const out: string = Buffer.concat(chunks).toString("UTF-8");
+      t.equal(code, 0);
+      t.equal(signal, null);
+      t.equal(out, "Hello, World!\n");
+    });
+  });
+
+  t.end();
 }
 
 function winSignals() {

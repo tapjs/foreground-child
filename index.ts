@@ -1,9 +1,6 @@
-import { ChildProcess, SpawnOptions } from "child_process";
+import cp, { ChildProcess } from "child_process";
 import { Server, Socket } from "net";
 import signalExit from "signal-exit";
-/* istanbul ignore next */
-// tslint:disable-next-line:no-var-requires
-const spawn = process.platform === "win32" ? require("cross-spawn") : require("child_process").spawn;
 
 /* istanbul ignore next */
 function noop() {
@@ -50,7 +47,12 @@ interface ProcessLike {
  * - If the child was killed by a signal, it kills the parent with this signal.
  * - If the child has exited, it exits the parent with the same return code.
  */
-type CloseFn = () => void;
+interface CloseFn {
+  (): void;
+
+  code: number | null;
+  signal: NodeJS.Signals | null;
+}
 
 /**
  * Proxies `child` through `parent`.
@@ -65,7 +67,7 @@ type CloseFn = () => void;
  * @param child Child process.
  * @return Close function to close the parent function like the child process.
  */
-async function proxy(parent: ProcessLike, child: ChildProcess): Promise<CloseFn> {
+async function proxy(parent: ProcessLike, child: cp.ChildProcess): Promise<CloseFn> {
   return new Promise<CloseFn>((resolve, reject) => {
     const unproxySignals: UnproxySignals = proxySignals(parent, child);
     const unproxyStreams: UnproxyStreams = proxyStreams(parent, child);
@@ -78,29 +80,135 @@ async function proxy(parent: ProcessLike, child: ChildProcess): Promise<CloseFn>
       child.kill("SIGHUP");
     }
 
-    function onClose(code: number | null, signal: string | null) {
+    function onClose(code: number | null, signal: NodeJS.Signals | null) {
       unproxyMessages();
       unproxyStreams();
       unproxySignals();
       parent.removeListener("exit", onParentExit);
-      resolve(() => {
-        if (signal !== null) {
-          /* istanbul ignore next */
-          if (parent === process) {
-            // If there is nothing else keeping the event loop alive,
-            // then there's a race between a graceful exit and getting
-            // the signal to this process.  Put this timeout here to
-            // make sure we're still alive to get the signal, and thus
-            // exit with the intended signal code.
-            setTimeout(noop, 200);
+      resolve(Object.assign(
+        () => {
+          if (signal !== null) {
+            /* istanbul ignore next */
+            if (parent === process) {
+              // If there is nothing else keeping the event loop alive,
+              // then there's a race between a graceful exit and getting
+              // the signal to this process.  Put this timeout here to
+              // make sure we're still alive to get the signal, and thus
+              // exit with the intended signal code.
+              setTimeout(noop, 200);
+            }
+            parent.kill(parent.pid, signal);
+          } else {
+            parent.exit(code!);
           }
-          parent.kill(parent.pid, signal);
-        } else {
-          parent.exit(code!);
-        }
-      });
+        },
+        {code, signal},
+      ));
     }
   });
+}
+
+/**
+ * Spawn options, with additional values specific to `foreground-child`.
+ *
+ * Note: The default value for `stdio` is `inherit` (as opposed to `pipe` in
+ * Node's `spawn`).
+ */
+interface SpawnOptions extends cp.SpawnOptions {
+  /**
+   * Parent process to use.
+   *
+   * Default: `process` (global variable).
+   */
+  parent?: ProcessLike;
+
+  /**
+   * Spawn function to use.
+   *
+   * You can supply your own spawn function.
+   * For example, you can use `cross-spawn` or a `spawn-wrap` function.
+   *
+   * Default: `require("child_process").spawn`
+   */
+  spawn?: typeof cp.spawn;
+}
+
+interface SpawnResult {
+  /**
+   * Proxied child process
+   */
+  child: ChildProcess;
+
+  /**
+   * Promise resolved once the child is closed.
+   *
+   * The value is a "close function" that closes the parent process the same
+   * way as the child was closed.
+   */
+  close: Promise<CloseFn>;
+}
+
+/**
+ * Spawns a new proxied child process.
+ *
+ * IO, IPC and signals from the parent process are forwarded to the child process.
+ * By default, it uses the global `process` variable as the parent, effectively
+ * moving control to the child process.
+ *
+ * @param file File to spawn
+ * @param args Process arguments
+ * @param options Spawn options. The options are similar to the ones of Node's
+ *   `spawn` function, with additional options specific to `foreground-child`.
+ *   See [[SpawnOptions]]. The default value for `stdio` is `inherit` (as opposed
+ *   to `pipe` in Node's `spawn`).
+ * @return The proxied child process and a promise for the close function.
+ */
+function spawn(file: string, args?: ReadonlyArray<string>, options?: SpawnOptions): SpawnResult {
+  if (args === undefined) {
+    args = [];
+  }
+  if (options === undefined) {
+    options = {};
+  }
+  const parent: ProcessLike = options.parent !== undefined ? options.parent : process;
+  const spawn: typeof cp.spawn = options.spawn !== undefined ? options.spawn : cp.spawn;
+  const spawnOptions: SpawnOptions = {
+    ...options,
+    stdio: getStdio(options.stdio, parent.send !== undefined),
+    parent: undefined,
+    spawn: undefined,
+  };
+  const child: ChildProcess = spawn(file, args, spawnOptions);
+  const close = proxy(parent, child);
+  return {child, close};
+}
+
+/**
+ * Returns an `stdio` value compatible with IPC forwarding.
+ *
+ * The default value for `base` is `inherit`, as opposed to `pipe` in Node's
+ * `spawn`.
+ * If `withIpc` is false, the input value is returned as is.
+ * Otherwise, it ensures that the `ipc` channel is present (adding it at the end if missing).
+ *
+ * @param base base value of `stdio`.
+ * @param withIpc Boolean indicating if the `ipc` channel should be present.
+ * @return Normalized `stdio` value.
+ */
+function getStdio(base: cp.StdioOptions | undefined, withIpc: boolean): cp.StdioOptions {
+  if (base === undefined) {
+    // Use Node's default value.
+    base = "inherit";
+  }
+  if (!withIpc) {
+    return base;
+  } else if (typeof base === "string") {
+    return [base, base, base, "ipc"];
+  } else if (base.indexOf("ipc") < 0) {
+    return [...base, "ipc"];
+  } else {
+    return base;
+  }
 }
 
 /**
@@ -151,21 +259,30 @@ function normalizeArguments(a: any[]): NormalizedArguments {
 }
 
 // tslint:disable:max-line-length
-function foregroundChild(program: string | ReadonlyArray<string>, cb?: CloseHandler): ChildProcess;
-function foregroundChild(program: string, args: ReadonlyArray<string>, cb?: CloseHandler): ChildProcess;
-function foregroundChild(program: string, arg1: string, cb?: CloseHandler): ChildProcess;
-function foregroundChild(program: string, arg1: string, arg2: string, cb?: CloseHandler): ChildProcess;
-function foregroundChild(program: string, arg1: string, arg2: string, arg3: string, cb?: CloseHandler): ChildProcess;
-function foregroundChild(program: string, arg1: string, arg2: string, arg3: string, arg4: string, cb?: CloseHandler): ChildProcess;
+function foregroundChild(program: string | ReadonlyArray<string>, cb?: CloseHandler): cp.ChildProcess;
+function foregroundChild(program: string, args: ReadonlyArray<string>, cb?: CloseHandler): cp.ChildProcess;
+function foregroundChild(program: string, arg1: string, cb?: CloseHandler): cp.ChildProcess;
+function foregroundChild(program: string, arg1: string, arg2: string, cb?: CloseHandler): cp.ChildProcess;
+function foregroundChild(program: string, arg1: string, arg2: string, arg3: string, cb?: CloseHandler): cp.ChildProcess;
+function foregroundChild(program: string, arg1: string, arg2: string, arg3: string, arg4: string, cb?: CloseHandler): cp.ChildProcess;
 // tslint:enable
+/**
+ * Original `foregroundChild` function.
+ *
+ * It is exposed as the main CJS export or as the `compat` named function.
+ *
+ * @deprecated
+ */
 function foregroundChild(...a: any[]): any {
+  /* istanbul ignore next */
+  const simpleSpawn = process.platform === "win32" ? require("cross-spawn") : require("child_process").spawn;
   const {program, args, cb} = normalizeArguments(a);
 
-  const spawnOpts: SpawnOptions = {
-    stdio: process.send !== undefined ? [0, 1, 2, "ipc"] : [0, 1, 2],
+  const spawnOpts: cp.SpawnOptions = {
+    stdio: getStdio("inherit", process.send !== undefined),
   };
 
-  const child: ChildProcess = spawn(program, args, spawnOpts);
+  const child: cp.ChildProcess = simpleSpawn(program, args, spawnOpts);
 
   if (process.send !== undefined) {
     process.removeAllListeners("message");
@@ -179,26 +296,29 @@ function foregroundChild(...a: any[]): any {
     child.kill("SIGHUP");
   }
 
-  child.on("close", (code: number | null, signal: string | null) => {
+  child.on("close", (code: number | null, signal: NodeJS.Signals | null) => {
     // Allow the callback to inspect the child’s exit code and/or modify it.
     process.exitCode = signal ? 128 + signal : code as any;
 
-    cb(() => {
-      unproxySignals();
-      process.removeListener("exit", childHangup);
-      if (signal) {
-        // If there is nothing else keeping the event loop alive,
-        // then there's a race between a graceful exit and getting
-        // the signal to this process.  Put this timeout here to
-        // make sure we're still alive to get the signal, and thus
-        // exit with the intended signal code.
-        setTimeout(noop, 200);
-        process.kill(process.pid, signal);
-      } else {
-        // Equivalent to process.exit() on Node.js >= 0.11.8
-        process.exit(process.exitCode);
-      }
-    });
+    cb(Object.assign(
+      () => {
+        unproxySignals();
+        process.removeListener("exit", childHangup);
+        if (signal) {
+          // If there is nothing else keeping the event loop alive,
+          // then there's a race between a graceful exit and getting
+          // the signal to this process.  Put this timeout here to
+          // make sure we're still alive to get the signal, and thus
+          // exit with the intended signal code.
+          setTimeout(noop, 200);
+          process.kill(process.pid, signal);
+        } else {
+          // Equivalent to process.exit() on Node.js >= 0.11.8
+          process.exit(process.exitCode);
+        }
+      },
+      {code, signal},
+    ));
   });
 
   return child;
@@ -212,7 +332,7 @@ type UnproxySignals = () => void;
 /**
  * @internal
  */
-function proxySignals(parent: ProcessLike, child: ChildProcess): UnproxySignals {
+function proxySignals(parent: ProcessLike, child: cp.ChildProcess): UnproxySignals {
   const listeners: Map<NodeJS.Signals, NodeJS.SignalsListener> = new Map();
 
   for (const sig of signalExit.signals()) {
@@ -238,7 +358,7 @@ type UnproxyMessages = () => void;
 /**
  * @internal
  */
-function proxyMessages(parent: ProcessLike, child: ChildProcess): UnproxyMessages {
+function proxyMessages(parent: ProcessLike, child: cp.ChildProcess): UnproxyMessages {
   if (parent.send === undefined) {
     return noop;
   }
@@ -270,7 +390,7 @@ type UnproxyStreams = () => void;
 /**
  * @internal
  */
-function proxyStreams(parent: ProcessLike, child: ChildProcess): UnproxyStreams {
+function proxyStreams(parent: ProcessLike, child: cp.ChildProcess): UnproxyStreams {
   if (typeof child.stdout === "object" && child.stdout !== null) {
     child.stdout.pipe(parent.stdout);
   }
@@ -302,12 +422,16 @@ export {
   CloseFn,
   ProcessLike,
   ReadableStreamLike,
+  SpawnOptions,
+  SpawnResult,
   foregroundChild as compat,
   proxy,
+  spawn,
 };
 
 module.exports = foregroundChild;
 Object.assign(module.exports, {
   compat: foregroundChild,
   proxy,
+  spawn,
 });

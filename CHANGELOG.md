@@ -3,7 +3,8 @@
 ## Unreleased
 
 * Breaking change: Require Node 6.
-* Feature: Implement `proxy` function.
+* Feature: Add `proxy` function.
+* Feature: Add `spawn` function.
 * Internal: Use Tslint.
 * Internal: Add Typescript support.
 * Internal: Add lock file.
