@@ -42,10 +42,10 @@ function test() {
     t.end();
   });
 
-  let time = 250;
+  let time = 500;
   // coverage slows things down a bit
   if (process.env._TAP_COVERAGE_) {
-    time = 1000;
+    time = 2000;
   }
   let timer = setTimeout(() => {
     proc.kill("SIGINT");
