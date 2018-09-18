@@ -20,7 +20,7 @@
     "prepare": "tsc",
     "pretest": "npm run prepare",
     "test": "tap --coverage test/*.js",
-    "posttest": "tslint --project ./tsconfig.json",
+    "posttest": "tap --coverage-report=html && tslint --project ./tsconfig.json",
     "tslint:fix": "tslint --project ./tsconfig.json --fix",
     "changelog": "bash changelog.sh",
     "postversion": "npm run changelog && git add CHANGELOG.md && git commit -m 'update changelog - '${npm_package_version}"
@@ -42,5 +42,19 @@
     "index.d.ts",
     "index.js",
     "index.ts"
-  ]
+  ],
+  "nyc": {
+    "include": [
+      "index.js",
+      "index.ts"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "reporter": [
+      "html",
+      "text"
+    ],
+    "all": true
+  }
 }

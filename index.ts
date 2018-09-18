@@ -1,9 +1,11 @@
 import { ChildProcess, SpawnOptions } from "child_process";
 import { Server, Socket } from "net";
 import signalExit from "signal-exit";
+/* istanbul ignore next */
 // tslint:disable-next-line:no-var-requires
 const spawn = process.platform === "win32" ? require("cross-spawn") : require("child_process").spawn;
 
+/* istanbul ignore next */
 function noop() {
 }
 
@@ -83,6 +85,7 @@ async function proxy(parent: ProcessLike, child: ChildProcess): Promise<CloseFn>
       parent.removeListener("exit", onParentExit);
       resolve(() => {
         if (signal !== null) {
+          /* istanbul ignore next */
           if (parent === process) {
             // If there is nothing else keeping the event loop alive,
             // then there's a race between a graceful exit and getting
