@@ -3,18 +3,25 @@
   "version": "1.5.6",
   "description": "Run a child as if it's the foreground process.  Give it stdio.  Exit when it exits.",
   "main": "index.js",
-  "directories": {
-    "test": "test"
+  "engines": {
+    "node": ">=6.0.0"
   },
   "dependencies": {
-    "cross-spawn": "^4",
+    "cross-spawn": "^6",
     "signal-exit": "^3.0.0"
   },
   "devDependencies": {
-    "tap": "^8.0.1"
+    "@types/node": "^10.9.4",
+    "tap": "^12.0.1",
+    "tslint": "^5.11.0",
+    "typescript": "^3.0.3"
   },
   "scripts": {
+    "prepare": "tsc",
+    "pretest": "npm run prepare",
     "test": "tap --coverage test/*.js",
+    "posttest": "tap --coverage-report=html && tslint --project ./tsconfig.json",
+    "tslint:fix": "tslint --project ./tsconfig.json --fix",
     "changelog": "bash changelog.sh",
     "postversion": "npm run changelog && git add CHANGELOG.md && git commit -m 'update changelog - '${npm_package_version}"
   },
@@ -28,7 +35,26 @@
     "url": "https://github.com/tapjs/foreground-child/issues"
   },
   "homepage": "https://github.com/tapjs/foreground-child#readme",
+  "directories": {
+    "test": "test"
+  },
   "files": [
-    "index.js"
-  ]
+    "index.d.ts",
+    "index.js",
+    "index.ts"
+  ],
+  "nyc": {
+    "include": [
+      "index.js",
+      "index.ts"
+    ],
+    "extension": [
+      ".ts"
+    ],
+    "reporter": [
+      "html",
+      "text"
+    ],
+    "all": true
+  }
 }
