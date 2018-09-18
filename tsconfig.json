@@ -20,7 +20,9 @@
       "./custom-typings"
     ]
   },
-  "files": [
-    "./index.ts"
-  ]
+  "include": [
+    "./index.ts",
+    "./test/**/*.ts"
+  ],
+  "exclude": []
 }

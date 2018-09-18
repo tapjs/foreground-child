@@ -1,26 +1,43 @@
-const fg = require("../index.js");
-const childProcess = require("child_process");
-const {PassThrough} = require("stream");
-const t = require('tap');
+import childProcess from "child_process";
+import stream from "stream";
+import t from "tap";
+import * as fg from "../index";
+
 const NODE = process.execPath;
 
-class MockProcess {
-  constructor(pid) {
+function noop() {
+}
+
+interface LogEntry {
+  type: string;
+  data: any;
+}
+
+class MockProcess implements fg.ProcessLike {
+  pid: number;
+  stdout: stream.Duplex;
+  stderr: stream.Duplex;
+  stdin: stream.Duplex;
+
+  logs: LogEntry[];
+  private exitListeners: NodeJS.ExitListener[];
+
+  constructor(pid: number) {
     this.pid = pid;
-    this.stdout = new PassThrough();
-    this.stderr = new PassThrough();
-    this.stdin = new PassThrough();
+    this.stdout = new stream.PassThrough();
+    this.stderr = new stream.PassThrough();
+    this.stdin = new stream.PassThrough();
 
     this.stdout.on("data", (chunk) => this.log("stdout", chunk));
     this.stderr.on("data", (chunk) => this.log("stderr", chunk));
 
     this.logs = [];
-    this.exitLiseners = [];
+    this.exitListeners = [];
   }
 
-  exit(code) {
+  exit(code: number) {
     this.log("exit", {code});
-    for (const listener of this.exitLiseners) {
+    for (const listener of this.exitListeners) {
       try {
         listener(code);
       } catch (err) {
@@ -28,29 +45,29 @@ class MockProcess {
     }
   }
 
-  kill(pid, signal) {
+  kill(pid: number, signal: NodeJS.Signals) {
     this.log("kill", {pid, signal});
   }
 
-  on(event, listener) {
+  on(event: string, listener: any) {
     this.log(`addListener:${event}`);
     if (event === "exit") {
-      this.exitLiseners.push(listener);
+      this.exitListeners.push(listener);
     }
   }
 
-  removeListener(event, listener) {
+  removeListener(event: string, listener: any) {
     this.log(`removeListener:${event}`);
     if (event === "exit") {
-      this.exitLiseners = this.exitLiseners.filter(l => l !== listener);
+      this.exitListeners = this.exitListeners.filter((l) => l !== listener);
     }
   }
 
-  send(message, handle) {
+  send(message: any, handle?: any): void {
     this.log("send", {message, handle});
   }
 
-  log(type, data) {
+  log(type: string, data?: any): void {
     this.logs.push({type, data});
   }
 }
@@ -65,36 +82,25 @@ switch (process.argv[2]) {
 }
 
 function child() {
-  setTimeout(function () {
-  }, 1000);
-  console.log('stdout');
-  setTimeout(function () {
-  }, 1000);
+  setTimeout(noop, 1000);
+  console.log("stdout");
+  setTimeout(noop, 1000);
   switch (process.argv[3]) {
-    case 'SIGTERM':
-    case 'SIGHUP':
-    case 'SIGKILL':
+    case "SIGTERM":
+    case "SIGHUP":
+    case "SIGKILL":
       process.kill(process.pid, process.argv[3]);
-      setTimeout(function () {
-      }, 100);
+      setTimeout(noop, 100);
       break;
 
-    case '0':
-    case '1':
-    case '2':
+    case "0":
+    case "1":
+    case "2":
       process.exit(parseInt(process.argv[3], 10));
       break;
 
-    case 'ipc':
-      process.on('message', function (m) {
-        console.log('message received');
-        process.send(m);
-        process.exit(0);
-      });
-      break;
-
-    case 'echo':
-      const chunks = [];
+    case "echo":
+      const chunks: Buffer[] = [];
       process.stdin.on("data", (chunk) => {
         chunks.push(chunk);
         const stdin = Buffer.concat(chunks).toString("UTF-8");
@@ -109,16 +115,16 @@ function child() {
 }
 
 function test() {
-  t.test('signals', {skip: winSignals()}, (t) => {
+  t.test("signals", {skip: winSignals()}, (t: any) => {
     const signals = [
-      'SIGTERM',
-      'SIGHUP',
-      'SIGKILL'
+      "SIGTERM",
+      "SIGHUP",
+      "SIGKILL",
     ];
     for (const sig of signals) {
-      t.test(sig, async (t) => {
+      t.test(sig, async (t: any) => {
         t.plan(1);
-        const args = [__filename, 'child', sig];
+        const args = [__filename, "child", sig];
         const parent = new MockProcess(1);
         const child = childProcess.spawn(NODE, args);
         const close = await fg.proxy(parent, child);
@@ -127,17 +133,17 @@ function test() {
           parent.logs.filter(({type}) => type === "kill"),
           [{type: "kill", data: {pid: 1, signal: sig}}],
         );
-      })
+      });
     }
     t.end();
   });
 
-  t.test('exit codes', (t) => {
+  t.test("exit codes", (t: any) => {
     const codes = [0, 1, 2];
     for (const c of codes) {
-      t.test(c, async (t) => {
+      t.test(c, async (t: any) => {
         t.plan(1);
-        const args = [__filename, 'child', c];
+        const args = [__filename, "child", c.toString(10)];
         const parent = new MockProcess(1);
         const child = childProcess.spawn(NODE, args);
         const close = await fg.proxy(parent, child);
@@ -146,15 +152,15 @@ function test() {
           parent.logs.filter(({type}) => type === "exit"),
           [{type: "exit", data: {code: c}}],
         );
-      })
+      });
     }
-    t.end()
+    t.end();
   });
 
-  t.test('streams', (t) => {
-    t.test("echo", async (t) => {
+  t.test("streams", (t: any) => {
+    t.test("echo", async (t: any) => {
       t.plan(2);
-      const args = [__filename, 'child', 'echo'];
+      const args = [__filename, "child", "echo"];
       const parent = new MockProcess(1);
       const child = childProcess.spawn(NODE, args);
       const closePromise = fg.proxy(parent, child);
@@ -170,9 +176,9 @@ function test() {
         [{type: "stderr", data: Buffer.from("Hello, World!\n")}],
       );
     });
-    t.test("Direct streams`", async (t) => {
+    t.test("Direct streams`", async (t: any) => {
       t.plan(1);
-      const args = [__filename, 'child'];
+      const args = [__filename, "child"];
       const parent = new MockProcess(1);
       const child = childProcess.spawn(NODE, args);
       // Simulate a cp created using the parent streams directly (stdio: [0, 1, 2]).
@@ -186,16 +192,17 @@ function test() {
         [],
       );
     });
-    t.end()
+    t.end();
   });
 
-  t.test('`parent.exit` kills its child', { skip: winSignals() }, async (t) => {
+  t.test("`parent.exit` kills its child", {skip: winSignals()}, async (t: any) => {
     t.plan(2);
-    const args = [__filename, 'child', 'echo'];
+    const args = [__filename, "child", "echo"];
     const parent = new MockProcess(1);
     const child = childProcess.spawn(NODE, args);
-    let killArgs = undefined;
+    let killArgs;
     const oldKill = child.kill;
+    // tslint:disable-next-line:only-arrow-functions space-before-function-paren
     child.kill = function (...args) {
       killArgs = args;
       child.kill = oldKill;
@@ -210,16 +217,12 @@ function test() {
       parent.logs.filter(({type}) => type === "exit"),
       [{type: "exit", data: {code: 3}}],
     );
-    t.match(
-      killArgs
-      ["SIGHUP"],
-    );
-    t.end()
-  })
+    t.match(killArgs, ["SIGHUP"]);
+    t.end();
+  });
 }
 
 function winSignals() {
-  return process.platform === 'win32' ?
-    'windows does not support unix signals' : false
+  return process.platform === "win32" ?
+    "windows does not support unix signals" : false;
 }
-

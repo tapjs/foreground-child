@@ -2,5 +2,5 @@ node_modules
 .DS_Store
 .nyc_output
 coverage
-/index.d.ts
-/index.js
+**/*.d.ts
+**/*.js

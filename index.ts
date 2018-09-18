@@ -32,15 +32,15 @@ interface ProcessLike {
 
   on(signal: NodeJS.Signals, listener: NodeJS.SignalsListener): any;
 
-  on(signal: "message", listener: (message: any, sendHandle: Socket | Server) => void): any;
+  on(event: "message", listener: (message: any, sendHandle: Socket | Server) => void): any;
 
-  on(signal: "exit", listener: NodeJS.ExitListener): any;
+  on(event: "exit", listener: NodeJS.ExitListener): any;
 
   removeListener(signal: NodeJS.Signals, listener: NodeJS.SignalsListener): any;
 
-  removeListener(signal: "message", listener: (message: any, sendHandle: Socket | Server) => void): any;
+  removeListener(event: "message", listener: (message: any, sendHandle: Socket | Server) => void): any;
 
-  removeListener(signal: "exit", listener: NodeJS.ExitListener): any;
+  removeListener(event: "exit", listener: NodeJS.ExitListener): any;
 
   send?(message: any, sendHandle?: any): void;
 }
@@ -302,10 +302,12 @@ export {
   CloseFn,
   ProcessLike,
   ReadableStreamLike,
+  foregroundChild as compat,
   proxy,
 };
 
 module.exports = foregroundChild;
 Object.assign(module.exports, {
+  compat: foregroundChild,
   proxy,
 });
