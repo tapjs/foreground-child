@@ -2,6 +2,9 @@ const signalExit = require('signal-exit')
 /* istanbul ignore next */
 const spawn = process.platform === 'win32' ? require('cross-spawn') : require('child_process').spawn
 
+function noop() {
+}
+
 /**
  * Normalizes the arguments passed to `foregroundChild`.
  *
@@ -82,14 +85,7 @@ function foregroundChild (...fgArgs) {
 
   if (process.send) {
     process.removeAllListeners('message')
-
-    child.on('message', (message, sendHandle) => {
-      process.send(message, sendHandle)
-    })
-
-    process.on('message', (message, sendHandle) => {
-      child.send(message, sendHandle)
-    })
+    proxyMessages(process, child)
   }
 
   return child
@@ -116,6 +112,38 @@ function proxySignals (parent, child) {
     for (const [sig, listener] of listeners) {
       parent.removeListener(sig, listener)
     }
+  }
+}
+
+/**
+ * Starts forwarding IPC messages to `child` through `parent`.
+ *
+ * @param parent Parent process.
+ * @param child Child Process.
+ * @return `unproxy` function to stop the forwarding.
+ * @internal
+ */
+function proxyMessages(parent, child) {
+  if (parent.send === undefined) {
+    return noop
+  }
+
+  function childListener(message, handle) {
+    parent.send(message, handle)
+  }
+
+  function parentListener(message, handle) {
+    child.send(message, handle)
+  }
+
+  child.on('message', childListener)
+  parent.on('message', parentListener)
+
+  return unproxySignals;
+
+  function unproxySignals() {
+    child.removeListener('message', childListener)
+    parent.removeListener('message', parentListener)
   }
 }
 
