@@ -4,31 +4,51 @@ if (process.platform === 'win32') {
   spawn = require('cross-spawn')
 }
 
-module.exports = function (program, args, cb) {
-  var arrayIndex = arguments.length
-
-  if (typeof args === 'function') {
-    cb = args
-    args = undefined
+/**
+ * Normalizes the arguments passed to `foregroundChild`.
+ *
+ * See the signature of `foregroundChild` for the supported arguments.
+ *
+ * @param fgArgs Array of arguments passed to `foregroundChild`.
+ * @return Normalized arguments
+ * @internal
+ */
+function normalizeFgArgs(fgArgs) {
+  var program, args, cb;
+  var processArgsEnd = fgArgs.length;
+  var lastFgArg = fgArgs[fgArgs.length - 1];
+  if (typeof lastFgArg === "function") {
+    cb = lastFgArg;
+    processArgsEnd -= 1;
   } else {
-    cb = Array.prototype.slice.call(arguments).filter(function (arg, i) {
-      if (typeof arg === 'function') {
-        arrayIndex = i
-        return true
-      }
-    })[0]
+    cb = function(done) { done(); };
   }
 
-  cb = cb || function (done) {
-    return done()
+  if (Array.isArray(fgArgs[0])) {
+    program = fgArgs[0][0];
+    args = fgArgs[0].slice(1);
+  } else {
+    program = fgArgs[0];
+    args = Array.isArray(fgArgs[1]) ? fgArgs[1] : fgArgs.slice(1, processArgsEnd);
   }
 
-  if (Array.isArray(program)) {
-    args = program.slice(1)
-    program = program[0]
-  } else if (!Array.isArray(args)) {
-    args = [].slice.call(arguments, 1, arrayIndex)
-  }
+  return {program: program, args: args, cb: cb};
+}
+
+/**
+ *
+ * Signatures:
+ * ```
+ * (program: string | string[], cb?: CloseHandler);
+ * (program: string, args: string[], cb?: CloseHandler);
+ * (program: string, ...args: string[], cb?: CloseHandler);
+ * ```
+ */
+module.exports = function (/* program, args, cb */) {
+  var fgArgs = normalizeFgArgs([].slice.call(arguments, 0));
+  var program = fgArgs.program;
+  var args = fgArgs.args;
+  var cb = fgArgs.cb;
 
   var spawnOpts = { stdio: [0, 1, 2] }
 
