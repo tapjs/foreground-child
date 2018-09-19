@@ -59,7 +59,7 @@ module.exports = function (/* program, args, cb */) {
   var child = spawn(program, args, spawnOpts)
 
   var childExited = false
-  var unproxySignals = proxySignals(child)
+  var unproxySignals = proxySignals(process, child)
   process.on('exit', childHangup)
   function childHangup () {
     child.kill('SIGHUP')
@@ -103,20 +103,26 @@ module.exports = function (/* program, args, cb */) {
   return child
 }
 
-function proxySignals (child) {
+/**
+ * Starts forwarding signals to `child` through `parent`.
+ *
+ * @param parent Parent process.
+ * @param child Child Process.
+ * @return `unproxy` function to stop the forwarding.
+ * @internal
+ */
+function proxySignals (parent, child) {
   var listeners = {}
   signalExit.signals().forEach(function (sig) {
     listeners[sig] = function () {
       child.kill(sig)
     }
-    process.on(sig, listeners[sig])
+    parent.on(sig, listeners[sig])
   })
 
-  return unproxySignals
-
-  function unproxySignals () {
+  return function unproxySignals () {
     for (var sig in listeners) {
-      process.removeListener(sig, listeners[sig])
+      parent.removeListener(sig, listeners[sig])
     }
   }
 }
