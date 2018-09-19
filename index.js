@@ -120,3 +120,37 @@ function proxySignals (child) {
     }
   }
 }
+
+/**
+ * Starts forwarding standard IO (stdin, stdout, stderr) to `child` through `parent`.
+ *
+ * @param parent Parent process.
+ * @param child Child Process.
+ * @return `unproxy` function to stop the forwarding.
+ * @internal
+ */
+function proxyStdio(parent, child) {
+  if (typeof child.stdin === 'object' && child.stdin !== null) {
+    parent.stdin.pipe(child.stdin)
+  }
+  if (typeof child.stdout === 'object' && child.stdout !== null) {
+    child.stdout.pipe(parent.stdout)
+  }
+  if (typeof child.stderr === 'object' && child.stderr !== null) {
+    child.stderr.pipe(parent.stderr)
+  }
+
+  return unproxyStdio;
+
+  function unproxyStdio() {
+    if (typeof child.stdin === 'object' && child.stdin !== null) {
+      parent.stdin.unpipe(child.stdin)
+    }
+    if (typeof child.stdout === 'object' && child.stdout !== null) {
+      child.stdout.unpipe(parent.stdout)
+    }
+    if (typeof child.stderr === 'object' && child.stderr !== null) {
+      child.stderr.unpipe(parent.stderr)
+    }
+  }
+}
