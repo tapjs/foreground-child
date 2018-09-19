@@ -1,11 +1,16 @@
 var node = process.execPath
 
-if (process.argv[2] === 'child')
-  child()
-else if (process.argv[2] === 'parent')
-  parent()
-else
-  test()
+switch (process.argv[2]) {
+  case 'child':
+    child()
+    break
+  case 'parent':
+    parent()
+    break
+  case undefined:
+    test()
+    break
+}
 
 function test () {
   var t = require('tap')
