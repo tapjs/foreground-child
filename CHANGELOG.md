@@ -3,6 +3,7 @@
 ## Unreleased
 
 * BREAKING CHANGE: Require Node 6
+* Internal: Add lock file
 
 ## v1.5.6
 
