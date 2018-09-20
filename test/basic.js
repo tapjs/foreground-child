@@ -119,7 +119,7 @@ t.test('exit codes', function (t) {
   t.end()
 })
 
-t.test('parent emits exit when SIGTERMed', { skip: isZero10OnTravis() || winSignals() }, function (t) {
+t.test('parent emits exit when SIGTERMed', { skip: winSignals() }, function (t) {
   var which = ['parent', 'child', 'nobody']
   which.forEach(function (who) {
     t.test('SIGTERM ' + who, function (t) {
@@ -180,11 +180,6 @@ t.test('IPC forwarding', function (t) {
     t.equal(messages[0].data, 'foobar')
   })
 })
-
-function isZero10OnTravis () {
-  return process.env.TRAVIS && /^v0\.10\.[0-9]+$/.test(process.version) ?
-    'skip on 0.10 on Travis' : false
-}
 
 function winSignals () {
   return process.platform === 'win32' ?
