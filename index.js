@@ -1,5 +1,6 @@
 var signalExit = require('signal-exit')
 var spawn = require('child_process').spawn
+/* istanbul ignore next */
 if (process.platform === 'win32') {
   spawn = require('cross-spawn')
 }
@@ -79,6 +80,7 @@ module.exports = function (/* program, args, cb */) {
         // the signal to this process.  Put this timeout here to
         // make sure we're still alive to get the signal, and thus
         // exit with the intended signal code.
+        /* istanbul ignore next */
         setTimeout(function () {}, 200)
         process.kill(process.pid, signal)
       } else {

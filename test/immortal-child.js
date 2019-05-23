@@ -49,7 +49,7 @@ function test () {
 
   var time = 250
   // coverage slows things down a bit
-  if (process.env._TAP_COVERAGE_)
+  if (process.env.NYC_CONFIG)
     time = 1000
   var timer = setTimeout(function () {
     proc.kill('SIGINT')

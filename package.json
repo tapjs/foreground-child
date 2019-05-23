@@ -11,12 +11,15 @@
     "signal-exit": "^3.0.0"
   },
   "devDependencies": {
-    "tap": "^12.0.1"
+    "tap": "^14.1.10"
   },
   "scripts": {
-    "test": "tap --coverage test/*.js",
+    "test": "tap",
     "changelog": "bash changelog.sh",
     "postversion": "npm run changelog && git add CHANGELOG.md && git commit -m 'update changelog - '${npm_package_version}"
+  },
+  "tap": {
+    "100": true
   },
   "repository": {
     "type": "git",
