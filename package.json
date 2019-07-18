@@ -19,7 +19,8 @@
     "postversion": "npm run changelog && git add CHANGELOG.md && git commit -m 'update changelog - '${npm_package_version}"
   },
   "tap": {
-    "100": true
+    "100": true,
+    "jobs": 1
   },
   "repository": {
     "type": "git",
