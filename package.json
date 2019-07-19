@@ -4,7 +4,7 @@
   "description": "Run a child as if it's the foreground process.  Give it stdio.  Exit when it exits.",
   "main": "index.js",
   "engines": {
-    "node": ">=6.0.0"
+    "node": ">=8.0.0"
   },
   "dependencies": {
     "cross-spawn": "^6",
@@ -19,7 +19,7 @@
     "postversion": "npm run changelog && git add CHANGELOG.md && git commit -m 'update changelog - '${npm_package_version}"
   },
   "tap": {
-    "100": true
+    "jobs": 1
   },
   "repository": {
     "type": "git",
