@@ -1,9 +1,6 @@
-var signalExit = require('signal-exit')
-var spawn = require('child_process').spawn
+const signalExit = require('signal-exit')
 /* istanbul ignore next */
-if (process.platform === 'win32') {
-  spawn = require('cross-spawn')
-}
+const spawn = process.platform === 'win32' ? require('cross-spawn') : require('child_process').spawn
 
 /**
  * Normalizes the arguments passed to `foregroundChild`.
@@ -15,25 +12,24 @@ if (process.platform === 'win32') {
  * @internal
  */
 function normalizeFgArgs(fgArgs) {
-  var program, args, cb;
-  var processArgsEnd = fgArgs.length;
-  var lastFgArg = fgArgs[fgArgs.length - 1];
+  let program, args, cb;
+  let processArgsEnd = fgArgs.length;
+  const lastFgArg = fgArgs[fgArgs.length - 1];
   if (typeof lastFgArg === "function") {
     cb = lastFgArg;
     processArgsEnd -= 1;
   } else {
-    cb = function(done) { done(); };
+    cb = (done) => done();
   }
 
   if (Array.isArray(fgArgs[0])) {
-    program = fgArgs[0][0];
-    args = fgArgs[0].slice(1);
+    [program, ...args] = fgArgs[0];
   } else {
     program = fgArgs[0];
     args = Array.isArray(fgArgs[1]) ? fgArgs[1] : fgArgs.slice(1, processArgsEnd);
   }
 
-  return {program: program, args: args, cb: cb};
+  return {program, args, cb};
 }
 
 /**
@@ -45,35 +41,30 @@ function normalizeFgArgs(fgArgs) {
  * (program: string, ...args: string[], cb?: CloseHandler);
  * ```
  */
-module.exports = function (/* program, args, cb */) {
-  var fgArgs = normalizeFgArgs([].slice.call(arguments, 0));
-  var program = fgArgs.program;
-  var args = fgArgs.args;
-  var cb = fgArgs.cb;
+function foregroundChild (...fgArgs) {
+  const {program, args, cb} = normalizeFgArgs(fgArgs);
 
-  var spawnOpts = { stdio: [0, 1, 2] }
+  const spawnOpts = { stdio: [0, 1, 2] }
 
   if (process.send) {
     spawnOpts.stdio.push('ipc')
   }
 
-  var child = spawn(program, args, spawnOpts)
+  const child = spawn(program, args, spawnOpts)
 
-  var childExited = false
-  var unproxySignals = proxySignals(process, child)
+  const unproxySignals = proxySignals(process, child)
   process.on('exit', childHangup)
   function childHangup () {
     child.kill('SIGHUP')
   }
 
-  child.on('close', function (code, signal) {
+  child.on('close', (code, signal) => {
     // Allow the callback to inspect the child’s exit code and/or modify it.
     process.exitCode = signal ? 128 + signal : code
 
-    cb(function () {
+    cb(() => {
       unproxySignals()
       process.removeListener('exit', childHangup)
-      childExited = true
       if (signal) {
         // If there is nothing else keeping the event loop alive,
         // then there's a race between a graceful exit and getting
@@ -84,7 +75,6 @@ module.exports = function (/* program, args, cb */) {
         setTimeout(function () {}, 200)
         process.kill(process.pid, signal)
       } else {
-        // Equivalent to process.exit() on Node.js >= 0.11.8
         process.exit(process.exitCode)
       }
     })
@@ -93,11 +83,11 @@ module.exports = function (/* program, args, cb */) {
   if (process.send) {
     process.removeAllListeners('message')
 
-    child.on('message', function (message, sendHandle) {
+    child.on('message', (message, sendHandle) => {
       process.send(message, sendHandle)
     })
 
-    process.on('message', function (message, sendHandle) {
+    process.on('message', (message, sendHandle) => {
       child.send(message, sendHandle)
     })
   }
@@ -114,17 +104,19 @@ module.exports = function (/* program, args, cb */) {
  * @internal
  */
 function proxySignals (parent, child) {
-  var listeners = {}
-  signalExit.signals().forEach(function (sig) {
-    listeners[sig] = function () {
-      child.kill(sig)
-    }
-    parent.on(sig, listeners[sig])
-  })
+  const listeners = new Map()
+
+  for (const sig of signalExit.signals()) {
+    const listener = () => child.kill(sig)
+    listeners.set(sig, listener)
+    parent.on(sig, listener)
+  }
 
   return function unproxySignals () {
-    for (var sig in listeners) {
-      parent.removeListener(sig, listeners[sig])
+    for (const [sig, listener] of listeners) {
+      parent.removeListener(sig, listener)
     }
   }
 }
+
+module.exports = foregroundChild
