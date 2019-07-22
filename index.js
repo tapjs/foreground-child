@@ -62,7 +62,14 @@ function foregroundChild (...fgArgs) {
     // Allow the callback to inspect the child’s exit code and/or modify it.
     process.exitCode = signal ? 128 + signal : code
 
-    cb(() => {
+    let done = false;
+    const doneCB = () => {
+      /* istanbul ignore if: paranoid check */
+      if (done) {
+        return
+      }
+
+      done = true
       unproxySignals()
       process.removeListener('exit', childHangup)
       if (signal) {
@@ -77,7 +84,12 @@ function foregroundChild (...fgArgs) {
       } else {
         process.exit(process.exitCode)
       }
-    })
+    };
+
+    const result = cb(doneCB);
+    if (result && result.then) {
+      result.then(doneCB);
+    }
   })
 
   if (process.send) {
