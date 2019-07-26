@@ -64,7 +64,6 @@ function foregroundChild (...fgArgs) {
 
     let done = false;
     const doneCB = () => {
-      /* istanbul ignore if: paranoid check */
       if (done) {
         return
       }

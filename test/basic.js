@@ -70,6 +70,22 @@ function parentMain() {
         console.log('promiseExitHandler')
       }
       break;
+    case 'beforeExitHandleDoubleDone':
+      cb = function (done) {
+        const {exit} = process;
+        // block process.exit
+        let code = 0;
+        let exits = 0;
+        process.exit = exitCode => {
+          exits++;
+          code = exitCode;
+        };
+        done();
+        done();
+        process.exit = exit;
+        console.log(`beforeExitHandleDoubleDone-${exits}`)
+      }
+      break;
   }
 
   var program = process.execPath
@@ -195,6 +211,26 @@ function test() {
           t.equal(signal, null)
           t.equal(code, c)
           t.equal(out, 'stdout\npromiseExitHandler\n')
+        })
+      })
+    })
+    t.end()
+  })
+
+  t.test('beforeExitHandleDoubleDone', function (t) {
+    var codes = [0, 1, 2]
+    codes.forEach(function (c) {
+      t.test(c, function (t) {
+        t.plan(3)
+        var prog = process.execPath
+        var args = [__filename, 'parent', c, 'beforeExitHandleDoubleDone']
+        var child = spawn(prog, args)
+        var out = ''
+        child.stdout.on('data', function (c) { out += c })
+        child.on('close', function (code, signal) {
+          t.equal(signal, null)
+          t.equal(code, c)
+          t.equal(out, 'stdout\nbeforeExitHandleDoubleDone-1\n')
         })
       })
     })
