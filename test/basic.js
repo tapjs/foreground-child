@@ -48,16 +48,44 @@ function parentMain() {
 
   // we can optionally assign a beforeExit handler
   // to the foreground-child process; we should test it.
-  if (process.argv[4] === 'beforeExitHandler') {
-    cb = function (done) {
-      var expectedExitCode = +process.argv[3]
-      if (expectedExitCode !== process.exitCode) {
-        console.log('unexpected exit code', expectedExitCode, process.exitCode);
-      }
+  switch (process.argv[4]) {
+    case 'beforeExitHandler':
+      cb = function (done) {
+        var expectedExitCode = +process.argv[3]
+        if (expectedExitCode !== process.exitCode) {
+          console.log('unexpected exit code', expectedExitCode, process.exitCode);
+        }
 
-      console.log('beforeExitHandler')
-      return done()
-    }
+        console.log('beforeExitHandler')
+        return done()
+      }
+      break;
+    case 'promiseExitHandler':
+      cb = async function () {
+        var expectedExitCode = +process.argv[3]
+        if (expectedExitCode !== process.exitCode) {
+          console.log('unexpected exit code', expectedExitCode, process.exitCode);
+        }
+
+        console.log('promiseExitHandler')
+      }
+      break;
+    case 'beforeExitHandleDoubleDone':
+      cb = function (done) {
+        const {exit} = process;
+        // block process.exit
+        let code = 0;
+        let exits = 0;
+        process.exit = exitCode => {
+          exits++;
+          code = exitCode;
+        };
+        done();
+        done();
+        process.exit = exit;
+        console.log(`beforeExitHandleDoubleDone-${exits}`)
+      }
+      break;
   }
 
   var program = process.execPath
@@ -163,6 +191,46 @@ function test() {
           t.equal(signal, null)
           t.equal(code, c)
           t.equal(out, 'stdout\nbeforeExitHandler\n')
+        })
+      })
+    })
+    t.end()
+  })
+
+  t.test('promiseExitHandler', function (t) {
+    var codes = [0, 1, 2]
+    codes.forEach(function (c) {
+      t.test(c, function (t) {
+        t.plan(3)
+        var prog = process.execPath
+        var args = [__filename, 'parent', c, 'promiseExitHandler']
+        var child = spawn(prog, args)
+        var out = ''
+        child.stdout.on('data', function (c) { out += c })
+        child.on('close', function (code, signal) {
+          t.equal(signal, null)
+          t.equal(code, c)
+          t.equal(out, 'stdout\npromiseExitHandler\n')
+        })
+      })
+    })
+    t.end()
+  })
+
+  t.test('beforeExitHandleDoubleDone', function (t) {
+    var codes = [0, 1, 2]
+    codes.forEach(function (c) {
+      t.test(c, function (t) {
+        t.plan(3)
+        var prog = process.execPath
+        var args = [__filename, 'parent', c, 'beforeExitHandleDoubleDone']
+        var child = spawn(prog, args)
+        var out = ''
+        child.stdout.on('data', function (c) { out += c })
+        child.on('close', function (code, signal) {
+          t.equal(signal, null)
+          t.equal(code, c)
+          t.equal(out, 'stdout\nbeforeExitHandleDoubleDone-1\n')
         })
       })
     })
