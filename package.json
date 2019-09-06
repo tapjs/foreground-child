@@ -7,11 +7,11 @@
     "node": ">=8.0.0"
   },
   "dependencies": {
-    "cross-spawn": "^6",
-    "signal-exit": "^3.0.0"
+    "cross-spawn": "^7.0.0",
+    "signal-exit": "^3.0.2"
   },
   "devDependencies": {
-    "tap": "^14.1.10"
+    "tap": "^14.6.1"
   },
   "scripts": {
     "test": "tap",
