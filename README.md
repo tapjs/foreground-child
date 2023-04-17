@@ -74,3 +74,10 @@ cannot be caught. In order to address this, a special "watchdog"
 child process is spawned which will send a SIGKILL to the child
 process if it does not terminate within half a second after the
 watchdog receives a SIGHUP due to its parent terminating.
+
+On Windows, issuing a `process.kill(process.pid, signal)` with a
+fatal termination signal may cause the process to exit with a `1`
+status code rather than reporting the signal properly. This
+module tries to do the right thing, but on Windows systems, you
+may see that incorrect result. There is as far as I'm aware no
+workaround for this.
