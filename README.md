@@ -25,11 +25,18 @@ const child = foregroundChild('cat', [__filename])
 // parent process will exit in the same way.
 ```
 
+You can provide custom spawn options by passing an object after
+the program and arguments:
+
+```js
+const child = foregroundChild(`cat ${__filename}`, { shell: true })
+```
+
 A callback can optionally be provided, if you want to perform an
 action before your foreground-child exits:
 
 ```js
-const child = foregroundChild('cat', [__filename], () => {
+const child = foregroundChild('cat', [__filename], spawnOptions, () => {
   doSomeActions()
 })
 ```

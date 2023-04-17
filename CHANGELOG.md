@@ -1,6 +1,10 @@
 # Changes
 
-## v3
+## v3.1
+
+- Add support for optional SpawnOptions param
+
+## v3.0
 
 - Rewritten as hybrid module in TypeScript
 - Support modifying (or suppressing) the exit of parent process.

@@ -46,26 +46,52 @@ export type Cleanup = (
   | Promise<void | undefined | number | NodeJS.Signals | false>
 
 export type FgArgs =
-  | [cmd: string | string[], cleanup?: Cleanup]
-  | [program: string, args: string[], cleanup?: Cleanup]
+  | [program: string | string[], cleanup?: Cleanup]
+  | [program: string[], opts?: SpawnOptions, cleanup?: Cleanup]
+  | [program: string, cleanup?: Cleanup]
+  | [program: string, opts?: SpawnOptions, cleanup?: Cleanup]
+  | [program: string, args?: string[], cleanup?: Cleanup]
+  | [
+      program: string,
+      args?: string[],
+      opts?: SpawnOptions,
+      cleanup?: Cleanup
+    ]
 
 /**
  * Normalizes the arguments passed to `foregroundChild`.
+ *
+ * Exposed for testing.
+ *
  * @internal
  */
 export const normalizeFgArgs = (
   fgArgs: FgArgs
-): [program: string, args: string[], cleanup: Cleanup] => {
-  const [program, args = [], cleanup = () => {}] = fgArgs
-
-  if (typeof program === 'string') {
-    return typeof args === 'function'
-      ? [program, [], args]
-      : [program, args, cleanup]
+): [
+  program: string,
+  args: string[],
+  spawnOpts: SpawnOptions,
+  cleanup: Cleanup
+] => {
+  let [program, args = [], spawnOpts = {}, cleanup = () => {}] = fgArgs
+  if (typeof args === 'function') {
+    cleanup = args
+    spawnOpts = {}
+    args = []
+  } else if (!!args && typeof args === 'object' && !Array.isArray(args)) {
+    if (typeof spawnOpts === 'function') cleanup = spawnOpts
+    spawnOpts = args
+    args = []
+  } else if (typeof spawnOpts === 'function') {
+    cleanup = spawnOpts
+    spawnOpts = {}
   }
-
-  const [pp, ...pa] = program
-  return typeof args === 'function' ? [pp, pa, args] : [pp, pa, cleanup]
+  if (Array.isArray(program)) {
+    const [pp, ...pa] = program
+    program = pp
+    args = pa
+  }
+  return [program, args, { ...spawnOpts }, cleanup]
 }
 
 /**
@@ -85,17 +111,26 @@ export function foregroundChild(
 ): ChildProcess
 export function foregroundChild(
   program: string,
-  args: string[],
+  args?: string[],
+  cleanup?: Cleanup
+): ChildProcess
+export function foregroundChild(
+  program: string,
+  spawnOpts?: SpawnOptions,
+  cleanup?: Cleanup
+): ChildProcess
+export function foregroundChild(
+  program: string,
+  args?: string[],
+  spawnOpts?: SpawnOptions,
   cleanup?: Cleanup
 ): ChildProcess
 export function foregroundChild(...fgArgs: FgArgs): ChildProcess {
-  const [program, args, cleanup] = normalizeFgArgs(fgArgs)
+  const [program, args, spawnOpts, cleanup] = normalizeFgArgs(fgArgs)
 
-  const stdio: SpawnOptions['stdio'] = [0, 1, 2]
-  const spawnOpts: SpawnOptions = { stdio }
-
+  spawnOpts.stdio = [0, 1, 2]
   if (process.send) {
-    stdio.push('ipc')
+    spawnOpts.stdio.push('ipc')
   }
 
   const child = spawn(program, args, spawnOpts)
@@ -145,7 +180,7 @@ export function foregroundChild(...fgArgs: FgArgs): ChildProcess {
       // make sure we're still alive to get the signal, and thus
       // exit with the intended signal code.
       /* istanbul ignore next */
-      setTimeout(function () {}, 2000)
+      setTimeout(() => {}, 2000)
       try {
         process.kill(process.pid, signal)
         /* c8 ignore start */
@@ -179,7 +214,7 @@ export function foregroundChild(...fgArgs: FgArgs): ChildProcess {
 /**
  * Starts forwarding signals to `child` through `parent`.
  */
-function proxySignals(child: ChildProcess) {
+const proxySignals = (child: ChildProcess) => {
   const listeners = new Map()
 
   for (const sig of allSignals) {
@@ -200,7 +235,7 @@ function proxySignals(child: ChildProcess) {
     /* c8 ignore stop */
   }
 
-  return function unproxySignals() {
+  return () => {
     for (const [sig, listener] of listeners) {
       process.removeListener(sig, listener)
     }
