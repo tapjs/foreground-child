@@ -40,4 +40,5 @@ export const watchdog = (child: ChildProcess) => {
   child.on('exit', () => {
     if (!dogExited) dog.kill('SIGTERM')
   })
+  return dog
 }

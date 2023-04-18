@@ -149,10 +149,11 @@ export function foregroundChild(...fgArgs: FgArgs): ChildProcess {
   }
   const removeOnExit = onExit(childHangup)
 
-  watchdog(child)
+  const dog = watchdog(child)
 
   let done = false
   child.on('close', async (code, signal) => {
+    dog.kill('SIGKILL')
     /* c8 ignore start */
     if (done) {
       return
