@@ -6,6 +6,6 @@ build: $(shell ls *.ts | grep -v '\.d\.ts' | sed -e 's#\.ts$$#.js#')
 	tsc
 
 clean:
-	rm *.js *.map *.d.ts
+	rm -f *.js *.map *.d.ts
 
 .PHONY: all build
