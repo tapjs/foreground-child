@@ -57,4 +57,3 @@ switch (process.argv[2]) {
         child(String(process.argv[3]));
         break;
 }
-//# sourceMappingURL=change-exit.js.map

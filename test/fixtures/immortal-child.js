@@ -31,4 +31,3 @@ switch (process.argv[2]) {
         parent();
         break;
 }
-//# sourceMappingURL=immortal-child.js.map

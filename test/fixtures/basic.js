@@ -78,4 +78,3 @@ switch (process.argv[2]) {
         parentMain();
         break;
 }
-//# sourceMappingURL=basic.js.map
