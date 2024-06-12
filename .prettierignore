@@ -1,4 +1,5 @@
 /node_modules
+/.tshy
 /example
 /.github
 /dist
@@ -7,3 +8,6 @@
 /.nyc_output
 /coverage
 /benchmark
+/test/fixtures/*.d.ts
+/test/fixtures/*.js
+/test/fixtures/*.map

@@ -27,6 +27,13 @@ if (!isNaN(pid)) {
 }
 `
 
+/**
+ * Pass in a ChildProcess, and this will spawn a watchdog process that
+ * will make sure it exits if the parent does, thus preventing any
+ * dangling detached zombie processes.
+ *
+ * If the child ends before the parent, then the watchdog will terminate.
+ */
 export const watchdog = (child: ChildProcess) => {
   let dogExited = false
   const dog = spawn(
@@ -34,11 +41,11 @@ export const watchdog = (child: ChildProcess) => {
     ['-e', watchdogCode, String(child.pid)],
     {
       stdio: 'ignore',
-    }
+    },
   )
   dog.on('exit', () => (dogExited = true))
   child.on('exit', () => {
-    if (!dogExited) dog.kill('SIGTERM')
+    if (!dogExited) dog.kill('SIGKILL')
   })
   return dog
 }

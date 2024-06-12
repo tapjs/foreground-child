@@ -5,7 +5,7 @@
  * Make sure to inspect the output below.  Do not ignore changes!
  */
 'use strict'
-exports[`test/change-exit.ts TAP [0,"SIGTERM",true,[null,"SIGTERM"]] > must match snapshot 1`] = `
+exports[`test/change-exit.ts > TAP > [0,"SIGTERM",true,[null,"SIGTERM"]] > must match snapshot 1`] = `
 Object {
   "change": "SIGTERM",
   "childExit": Object {
@@ -28,7 +28,7 @@ Object {
 }
 `
 
-exports[`test/change-exit.ts TAP [0,1,false,[1,null]] > must match snapshot 1`] = `
+exports[`test/change-exit.ts > TAP > [0,1,false,[1,null]] > must match snapshot 1`] = `
 Object {
   "change": 1,
   "childExit": Object {
@@ -51,7 +51,7 @@ Object {
 }
 `
 
-exports[`test/change-exit.ts TAP [0,null,false,[0,null]] > must match snapshot 1`] = `
+exports[`test/change-exit.ts > TAP > [0,null,false,[0,null]] > must match snapshot 1`] = `
 Object {
   "childExit": Object {
     "actual": Array [
@@ -73,7 +73,7 @@ Object {
 }
 `
 
-exports[`test/change-exit.ts TAP [0,null,true,[0,null]] > must match snapshot 1`] = `
+exports[`test/change-exit.ts > TAP > [0,null,true,[0,null]] > must match snapshot 1`] = `
 Object {
   "childExit": Object {
     "actual": Array [
@@ -95,7 +95,7 @@ Object {
 }
 `
 
-exports[`test/change-exit.ts TAP [3,"SIGTERM",false,[null,"SIGTERM"]] > must match snapshot 1`] = `
+exports[`test/change-exit.ts > TAP > [3,"SIGTERM",false,[null,"SIGTERM"]] > must match snapshot 1`] = `
 Object {
   "change": "SIGTERM",
   "childExit": Object {
@@ -118,7 +118,7 @@ Object {
 }
 `
 
-exports[`test/change-exit.ts TAP [3,1,true,[1,null]] > must match snapshot 1`] = `
+exports[`test/change-exit.ts > TAP > [3,1,true,[1,null]] > must match snapshot 1`] = `
 Object {
   "change": 1,
   "childExit": Object {
@@ -141,7 +141,7 @@ Object {
 }
 `
 
-exports[`test/change-exit.ts TAP [3,false,false,[33,null]] > must match snapshot 1`] = `
+exports[`test/change-exit.ts > TAP > [3,false,false,[33,null]] > must match snapshot 1`] = `
 Object {
   "change": false,
   "childExit": Object {
@@ -164,7 +164,7 @@ Object {
 }
 `
 
-exports[`test/change-exit.ts TAP [3,false,true,[33,null]] > must match snapshot 1`] = `
+exports[`test/change-exit.ts > TAP > [3,false,true,[33,null]] > must match snapshot 1`] = `
 Object {
   "change": false,
   "childExit": Object {
@@ -187,7 +187,7 @@ Object {
 }
 `
 
-exports[`test/change-exit.ts TAP [3,null,false,[3,null]] > must match snapshot 1`] = `
+exports[`test/change-exit.ts > TAP > [3,null,false,[3,null]] > must match snapshot 1`] = `
 Object {
   "childExit": Object {
     "actual": Array [

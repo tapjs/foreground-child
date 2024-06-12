@@ -1,5 +1,9 @@
 # Changes
 
+## v3.2
+
+- Export `watchdog` and `proxySignals` functionality
+
 ## v3.1
 
 - Add support for optional SpawnOptions param

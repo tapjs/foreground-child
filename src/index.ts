@@ -7,7 +7,7 @@ import {
 } from 'child_process'
 import crossSpawn from 'cross-spawn'
 import { onExit } from 'signal-exit'
-import { allSignals } from './all-signals.js'
+import { proxySignals } from './proxy-signals.js'
 import { watchdog } from './watchdog.js'
 
 /* c8 ignore start */
@@ -36,7 +36,7 @@ const spawn = process?.platform === 'win32' ? crossSpawn : nodeSpawn
  */
 export type Cleanup = (
   code: number | null,
-  signal: null | NodeJS.Signals
+  signal: null | NodeJS.Signals,
 ) =>
   | void
   | undefined
@@ -46,8 +46,12 @@ export type Cleanup = (
   | Promise<void | undefined | number | NodeJS.Signals | false>
 
 export type FgArgs =
-  | [program: string | string[], cleanup?: Cleanup]
-  | [program: string[], opts?: SpawnOptions, cleanup?: Cleanup]
+  | [program: string | [cmd: string, ...args: string[]], cleanup?: Cleanup]
+  | [
+      program: [cmd: string, ...args: string[]],
+      opts?: SpawnOptions,
+      cleanup?: Cleanup,
+    ]
   | [program: string, cleanup?: Cleanup]
   | [program: string, opts?: SpawnOptions, cleanup?: Cleanup]
   | [program: string, args?: string[], cleanup?: Cleanup]
@@ -55,7 +59,7 @@ export type FgArgs =
       program: string,
       args?: string[],
       opts?: SpawnOptions,
-      cleanup?: Cleanup
+      cleanup?: Cleanup,
     ]
 
 /**
@@ -66,12 +70,12 @@ export type FgArgs =
  * @internal
  */
 export const normalizeFgArgs = (
-  fgArgs: FgArgs
+  fgArgs: FgArgs,
 ): [
   program: string,
   args: string[],
   spawnOpts: SpawnOptions,
-  cleanup: Cleanup
+  cleanup: Cleanup,
 ] => {
   let [program, args = [], spawnOpts = {}, cleanup = () => {}] = fgArgs
   if (typeof args === 'function') {
@@ -106,24 +110,24 @@ export const normalizeFgArgs = (
  * Return boolean `false` to prevent the parent's exit entirely.
  */
 export function foregroundChild(
-  cmd: string | string[],
-  cleanup?: Cleanup
+  cmd: string | [cmd: string, ...args: string[]],
+  cleanup?: Cleanup,
 ): ChildProcess
 export function foregroundChild(
   program: string,
   args?: string[],
-  cleanup?: Cleanup
+  cleanup?: Cleanup,
 ): ChildProcess
 export function foregroundChild(
   program: string,
   spawnOpts?: SpawnOptions,
-  cleanup?: Cleanup
+  cleanup?: Cleanup,
 ): ChildProcess
 export function foregroundChild(
   program: string,
   args?: string[],
   spawnOpts?: SpawnOptions,
-  cleanup?: Cleanup
+  cleanup?: Cleanup,
 ): ChildProcess
 export function foregroundChild(...fgArgs: FgArgs): ChildProcess {
   const [program, args, spawnOpts, cleanup] = normalizeFgArgs(fgArgs)
@@ -135,7 +139,6 @@ export function foregroundChild(...fgArgs: FgArgs): ChildProcess {
 
   const child = spawn(program, args, spawnOpts)
 
-  const unproxySignals = proxySignals(child)
   const childHangup = () => {
     try {
       child.kill('SIGHUP')
@@ -149,21 +152,18 @@ export function foregroundChild(...fgArgs: FgArgs): ChildProcess {
   }
   const removeOnExit = onExit(childHangup)
 
-  const dog = watchdog(child)
+  proxySignals(child)
+  watchdog(child)
 
   let done = false
   child.on('close', async (code, signal) => {
-    dog.kill('SIGKILL')
     /* c8 ignore start */
-    if (done) {
-      return
-    }
+    if (done) return
     /* c8 ignore stop */
     done = true
     const result = cleanup(code, signal)
     const res = isPromise(result) ? await result : result
     removeOnExit()
-    unproxySignals()
 
     if (res === false) return
     else if (typeof res === 'string') {
@@ -204,43 +204,12 @@ export function foregroundChild(...fgArgs: FgArgs): ChildProcess {
     process.on('message', (message, sendHandle) => {
       child.send(
         message as Serializable,
-        sendHandle as SendHandle | undefined
+        sendHandle as SendHandle | undefined,
       )
     })
   }
 
   return child
-}
-
-/**
- * Starts forwarding signals to `child` through `parent`.
- */
-const proxySignals = (child: ChildProcess) => {
-  const listeners = new Map()
-
-  for (const sig of allSignals) {
-    const listener = () => {
-      // some signals can only be received, not sent
-      try {
-        child.kill(sig)
-        /* c8 ignore start */
-      } catch (_) {}
-      /* c8 ignore stop */
-    }
-    try {
-      // if it's a signal this system doesn't recognize, skip it
-      process.on(sig, listener)
-      listeners.set(sig, listener)
-      /* c8 ignore start */
-    } catch (_) {}
-    /* c8 ignore stop */
-  }
-
-  return () => {
-    for (const [sig, listener] of listeners) {
-      process.removeListener(sig, listener)
-    }
-  }
 }
 
 const isPromise = (o: any): o is Promise<any> =>

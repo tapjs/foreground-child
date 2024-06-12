@@ -1,5 +1,5 @@
 import t from 'tap'
-import { FgArgs, normalizeFgArgs } from '../dist/cjs/index.js'
+import { FgArgs, normalizeFgArgs } from '../dist/esm/index.js'
 
 const cases: FgArgs[] = [
   ['cmd', ['a', 'b']],

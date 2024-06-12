@@ -7,7 +7,7 @@ export const allSignals =
       // https://github.com/tapjs/signal-exit/issues/21
       k !== 'SIGPROF' &&
       // no sense trying to listen for SIGKILL, it's impossible
-      k !== 'SIGKILL'
+      k !== 'SIGKILL',
   ) as NodeJS.Signals[]
 
 // These are some obscure signals that are reported by kill -l
