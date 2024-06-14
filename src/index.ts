@@ -1,5 +1,5 @@
 import {
-  ChildProcess,
+  ChildProcessByStdio,
   SendHandle,
   Serializable,
   spawn as nodeSpawn,
@@ -112,24 +112,26 @@ export const normalizeFgArgs = (
 export function foregroundChild(
   cmd: string | [cmd: string, ...args: string[]],
   cleanup?: Cleanup,
-): ChildProcess
+): ChildProcessByStdio<null, null, null>
 export function foregroundChild(
   program: string,
   args?: string[],
   cleanup?: Cleanup,
-): ChildProcess
+): ChildProcessByStdio<null, null, null>
 export function foregroundChild(
   program: string,
   spawnOpts?: SpawnOptions,
   cleanup?: Cleanup,
-): ChildProcess
+): ChildProcessByStdio<null, null, null>
 export function foregroundChild(
   program: string,
   args?: string[],
   spawnOpts?: SpawnOptions,
   cleanup?: Cleanup,
-): ChildProcess
-export function foregroundChild(...fgArgs: FgArgs): ChildProcess {
+): ChildProcessByStdio<null, null, null>
+export function foregroundChild(
+  ...fgArgs: FgArgs
+): ChildProcessByStdio<null, null, null> {
   const [program, args, spawnOpts, cleanup] = normalizeFgArgs(fgArgs)
 
   spawnOpts.stdio = [0, 1, 2]
@@ -137,7 +139,11 @@ export function foregroundChild(...fgArgs: FgArgs): ChildProcess {
     spawnOpts.stdio.push('ipc')
   }
 
-  const child = spawn(program, args, spawnOpts)
+  const child = spawn(program, args, spawnOpts) as ChildProcessByStdio<
+    null,
+    null,
+    null
+  >
 
   const childHangup = () => {
     try {
