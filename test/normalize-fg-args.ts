@@ -32,7 +32,7 @@ t.plan(cases.length)
 for (const c of cases) {
   t.test(JSON.stringify(c), t => {
     const norm = normalizeFgArgs(c)
-    norm[3](0, null)
+    norm[3](0, null, {})
     t.equal(norm[0], 'cmd')
     if (Array.isArray(c[1])) {
       t.equal(norm[1], c[1])

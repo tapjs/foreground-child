@@ -1,5 +1,10 @@
 # Changes
 
+## v3.3
+
+- Include `watchdogPid` as a metadata argument to cleanup
+  function
+
 ## v3.2
 
 - Export `watchdog` and `proxySignals` functionality

@@ -4,6 +4,7 @@ import {
   Serializable,
   spawn as nodeSpawn,
   SpawnOptions,
+  ChildProcess,
 } from 'child_process'
 import crossSpawn from 'cross-spawn'
 import { onExit } from 'signal-exit'
@@ -37,6 +38,9 @@ const spawn = process?.platform === 'win32' ? crossSpawn : nodeSpawn
 export type Cleanup = (
   code: number | null,
   signal: null | NodeJS.Signals,
+  processInfo: {
+    watchdogPid?: ChildProcess['pid']
+  },
 ) =>
   | void
   | undefined
@@ -159,7 +163,7 @@ export function foregroundChild(
   const removeOnExit = onExit(childHangup)
 
   proxySignals(child)
-  watchdog(child)
+  const dog = watchdog(child)
 
   let done = false
   child.on('close', async (code, signal) => {
@@ -167,7 +171,9 @@ export function foregroundChild(
     if (done) return
     /* c8 ignore stop */
     done = true
-    const result = cleanup(code, signal)
+    const result = cleanup(code, signal, {
+      watchdogPid: dog.pid,
+    })
     const res = isPromise(result) ? await result : result
     removeOnExit()
 
