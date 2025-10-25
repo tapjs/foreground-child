@@ -79,7 +79,7 @@
     "url": "git+https://github.com/tapjs/foreground-child.git"
   },
   "author": "Isaac Z. Schlueter <i@izs.me> (http://blog.izs.me/)",
-  "license": "ISC",
+  "license": "BlueOak-1.0.0",
   "devDependencies": {
     "@types/cross-spawn": "^6.0.2",
     "@types/node": "^18.15.11",
