@@ -1,5 +1,10 @@
 # Changes
 
+## v4.0
+
+- Drop cross-spawn. It's CJS only, and no longer needed in modern
+  node versions.
+
 ## v3.3
 
 - Include `watchdogPid` as a metadata argument to cleanup
