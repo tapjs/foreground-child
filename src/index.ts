@@ -2,18 +2,13 @@ import {
   ChildProcessByStdio,
   SendHandle,
   Serializable,
-  spawn as nodeSpawn,
+  spawn,
   SpawnOptions,
   ChildProcess,
-} from 'child_process'
-import crossSpawn from 'cross-spawn'
+} from 'node:child_process'
 import { onExit } from 'signal-exit'
 import { proxySignals } from './proxy-signals.js'
 import { watchdog } from './watchdog.js'
-
-/* c8 ignore start */
-const spawn = process?.platform === 'win32' ? crossSpawn : nodeSpawn
-/* c8 ignore stop */
 
 /**
  * The signature for the cleanup method.

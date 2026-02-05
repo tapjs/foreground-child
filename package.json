@@ -44,7 +44,6 @@
     "node": ">=14"
   },
   "dependencies": {
-    "cross-spawn": "^7.0.6",
     "signal-exit": "^4.0.1"
   },
   "scripts": {
