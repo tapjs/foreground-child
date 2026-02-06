@@ -22,7 +22,7 @@ if (!isNaN(pid)) {
         setTimeout(() => process.exit(), 200)
       } catch (_) {}
     }, 500)
-  })
+  }
   process.on('SIGHUP', bark)
 }
 `
@@ -39,10 +39,9 @@ export const watchdog = (child: ChildProcess) => {
   const dog = spawn(
     process.execPath,
     ['-e', watchdogCode, String(child.pid)],
-    {
-      stdio: 'ignore',
-    },
+    { stdio: ['ignore', 'ignore', 'pipe'] },
   )
+  dog.stderr.pipe(process.stderr, { end: false })
   dog.on('exit', () => (dogExited = true))
   child.on('exit', () => {
     if (!dogExited) dog.kill('SIGKILL')

@@ -160,6 +160,30 @@ export function foregroundChild(
   proxySignals(child)
   const dog = watchdog(child)
 
+  dog.on('close', (code, signal) => {
+    if (done) return
+    /* c8 ignore start
+     * this should be impossible, and is intentionally hidden from the
+     * consumer, thus impossible to test.
+     * However, when the watchdog process dies unexpectedly for some reason,
+     * this causes EVERY test to fail immediately, so we can be reasonably
+     * sure that it's doing its job. */
+    child.kill('SIGKILL')
+    throw new Error('foreground-child watchdog process died unexpectedly!', {
+      cause: {
+        pid: dog.pid,
+        code,
+        signal,
+        watchedProcess: {
+          cmd: program,
+          args,
+          pid: child.pid,
+        },
+      },
+    })
+    /* c8 ignore stop */
+  })
+
   let done = false
   child.on('close', async (code, signal) => {
     /* c8 ignore start */
