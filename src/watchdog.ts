@@ -35,16 +35,13 @@ if (!isNaN(pid)) {
  * If the child ends before the parent, then the watchdog will terminate.
  */
 export const watchdog = (child: ChildProcess) => {
-  let dogExited = false
   const dog = spawn(
     process.execPath,
     ['-e', watchdogCode, String(child.pid)],
     { stdio: ['ignore', 'ignore', 'pipe'] },
   )
   dog.stderr.pipe(process.stderr, { end: false })
-  dog.on('exit', () => (dogExited = true))
-  child.on('exit', () => {
-    if (!dogExited) dog.kill('SIGKILL')
-  })
+  child.on('exit', () => dog.kill('SIGKILL'))
+  process.on('exit', () => dog.kill('SIGKILL'))
   return dog
 }
