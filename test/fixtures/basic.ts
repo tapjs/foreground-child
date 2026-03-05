@@ -11,6 +11,7 @@ const childMain = () => {
     case 'SIGTERM':
     case 'SIGHUP':
     case 'SIGKILL':
+    case 'SIGABRT':
       process.kill(process.pid, process.argv[3])
       break
 

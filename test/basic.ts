@@ -1,4 +1,5 @@
 import { spawn } from 'child_process'
+import { constants } from 'node:os'
 import t from 'tap'
 import { fileURLToPath } from 'url'
 
@@ -14,7 +15,7 @@ const winSignals = () => {
 
 t.jobs = 3
 t.test('signals', { skip: winSignals() }, t => {
-  const signals = ['SIGTERM', 'SIGHUP', 'SIGKILL']
+  const signals = ['SIGTERM', 'SIGHUP', 'SIGKILL', 'SIGABRT']
   t.jobs = signals.length
   for (const sig of signals) {
     t.test(sig, t => {
@@ -25,8 +26,17 @@ t.test('signals', { skip: winSignals() }, t => {
       const out: Buffer[] = []
       child.stdout.on('data', c => out.push(c))
       child.on('close', (code, signal) => {
-        t.equal(signal, sig)
-        t.equal(code, null)
+        // The parent either dies from the signal directly, or falls
+        // back to process.exit(128 + signum) if the self-signal
+        // doesn't terminate the process (e.g. SIGABRT on Linux).
+        const sigNum = constants.signals[sig as NodeJS.Signals]
+        if (signal) {
+          t.equal(signal, sig)
+          t.equal(code, null)
+        } else {
+          t.equal(signal, null)
+          t.equal(code, 128 + sigNum)
+        }
         t.equal(Buffer.concat(out).toString(), 'stdout\n')
       })
     })

@@ -6,6 +6,7 @@ import {
   SpawnOptions,
   ChildProcess,
 } from 'node:child_process'
+import { constants } from 'node:os'
 import { onExit } from 'signal-exit'
 import { proxySignals } from './proxy-signals.js'
 import { watchdog } from './watchdog.js'
@@ -212,7 +213,12 @@ export function foregroundChild(
       // make sure we're still alive to get the signal, and thus
       // exit with the intended signal code.
       /* istanbul ignore next */
-      setTimeout(() => {}, 2000)
+      const sigNum = constants.signals[signal]
+      setTimeout(() => {
+        // Fallback: if the signal didn't kill us, exit with the
+        // conventional 128 + signal_number code.
+        process.exit(128 + (sigNum || 0))
+      }, 2000)
       try {
         process.kill(process.pid, signal)
         /* c8 ignore start */
